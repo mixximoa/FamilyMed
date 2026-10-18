@@ -3,337 +3,2438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Сімейна Медкартка</title>
+    <title>Сімейна Медкартка PRO</title>
     <style>
         :root {
             --primary: #0284c7;
             --primary-dark: #0369a1;
-            --bg: #f8fafc;
+            --primary-light: #e0f2fe;
+            --bg: #f1f5f9;
             --card-bg: #ffffff;
-            --text: #1e293b;
+            --text: #0f172a;
             --text-light: #64748b;
             --border: #e2e8f0;
             --danger: #ef4444;
-            --success: #22c55e;
+            --danger-light: #fee2e2;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --purple: #8b5cf6;
+            --purple-light: #ede9fe;
+            --teal: #0d9488;
+            --teal-light: #ccfbf1;
+            --shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
-        header { background: var(--primary); color: white; padding: 16px; text-align: center; font-size: 1.25rem; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+
+        [data-theme="dark"] {
+            --primary: #38bdf8;
+            --primary-dark: #0284c7;
+            --primary-light: #0c4a6e;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-light: #94a3b8;
+            --border: #334155;
+            --danger-light: #450a0a;
+            --success-light: #064e3b;
+            --warning-light: #451a03;
+            --purple-light: #2e1065;
+            --teal-light: #134e4a;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; transition: background 0.2s, color 0.2s; }
         
-        /* Tabs */
-        .tabs { display: flex; background: white; border-bottom: 1px solid var(--border); overflow-x: auto; }
-        .tab { flex: 1; padding: 12px; text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--text-light); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; }
-        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        /* Header */
+        header { background: linear-gradient(135deg, #0284c7, #0f766e); color: white; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+        .header-title { font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+        .header-actions { display: flex; gap: 8px; }
+        .icon-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .icon-btn:active { background: rgba(255,255,255,0.35); }
+
+        /* Navigation Tabs */
+        .tabs { display: flex; background: var(--card-bg); border-bottom: 1px solid var(--border); overflow-x: auto; position: sticky; top: 64px; z-index: 90; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { flex: 1; min-width: 64px; padding: 10px 4px; text-align: center; font-size: 0.68rem; font-weight: 700; color: var(--text-light); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: 0.2s; }
+        .tab span.tab-icon { font-size: 1.15rem; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); background: rgba(2, 132, 199, 0.04); }
+
+        .container { padding: 14px; max-width: 650px; margin: 0 auto; }
+
+        /* Sub-navigation segmented control */
+        .sub-tabs { display: flex; background: var(--card-bg); padding: 4px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 14px; }
+        .sub-tab { flex: 1; text-align: center; padding: 9px 6px; font-size: 0.84rem; font-weight: 700; border-radius: 9px; cursor: pointer; color: var(--text-light); transition: 0.2s; }
+        .sub-tab.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25); }
 
         /* Cards */
-        .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
-        .card h3 { font-size: 1.1rem; margin-bottom: 6px; color: var(--primary-dark); }
-        .card p { font-size: 0.9rem; color: var(--text-light); margin-bottom: 4px; }
-        
+        .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .card h3 { font-size: 1.05rem; margin-bottom: 6px; color: var(--text); font-weight: 700; }
+        .card p { font-size: 0.88rem; color: var(--text-light); margin-bottom: 5px; line-height: 1.4; }
+        .card p b { color: var(--text); }
+
+        /* Backup Alert Banner */
+        #backupDueBanner { display: none; background: linear-gradient(135deg, #f59e0b, #ea580c); color: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25); }
+
+        /* Member Card Specific */
+        .member-header { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+        .avatar-circle { width: 62px; height: 62px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; flex-shrink: 0; border: 2px solid var(--primary); overflow: hidden; object-fit: cover; }
+        .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+
         /* Buttons */
-        .btn { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; text-align: center; }
-        .btn:active { background: var(--primary-dark); }
-        .btn-danger { background: var(--danger); }
-        .btn-secondary { background: #64748b; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 8px; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s, opacity 0.2s; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-teal { background: var(--teal); color: white; }
+        .btn-purple { background: var(--purple); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
+        .btn-sm { padding: 7px 12px; font-size: 0.78rem; border-radius: 8px; width: auto; margin-top: 0; }
 
         /* Forms */
-        input, select, textarea { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: #fff; }
-        label { font-size: 0.85rem; font-weight: 600; color: var(--text-light); }
+        input, select, textarea { width: 100%; padding: 11px 12px; margin: 5px 0 12px 0; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+        label { font-size: 0.82rem; font-weight: 700; color: var(--text-light); display: block; margin-top: 4px; }
+        .form-row { display: flex; gap: 10px; }
+        .form-row > div { flex: 1; }
 
-        /* Modal */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-end; }
-        .modal-content { background: white; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 20px; border-radius: 20px 20px 0 0; animation: slideUp 0.3s ease; }
+        /* Badges & Chips */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; font-size: 0.73rem; font-weight: 700; background: var(--primary-light); color: var(--primary); border-radius: 6px; margin-right: 4px; margin-bottom: 4px; }
+        .badge-purple { background: var(--purple-light); color: var(--purple); }
+        .badge-home { background: var(--teal-light); color: var(--teal); }
+        .badge-money { background: var(--warning-light); color: #d97706; }
+        .badge-danger { background: var(--danger-light); color: var(--danger); }
+        .badge-success { background: var(--success-light); color: var(--success); }
+        
+        /* Hashtag Chips */
+        .chips-container { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px 0; }
+        .chip { padding: 5px 10px; font-size: 0.78rem; font-weight: 600; border-radius: 20px; background: var(--bg); color: var(--text); border: 1px solid var(--border); cursor: pointer; user-select: none; transition: 0.15s; }
+        .chip:active, .chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
+        .chip-funny { border-style: dashed; border-color: var(--purple); color: var(--purple); }
+
+        /* Pill Tracker Specific Styles */
+        .date-navigator { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 14px; box-shadow: var(--shadow); }
+        .date-nav-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .dose-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .dose-btn { flex: 1; min-width: 110px; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; user-select: none; }
+        .dose-btn.taken { background: var(--success-light); border-color: var(--success); color: var(--success); }
+        .dose-btn:active { transform: scale(0.96); }
+        .slot-check-label { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1.5px solid var(--border); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-right: 6px; margin-bottom: 6px; }
+        .slot-check-label input { width: auto; margin: 0; }
+
+        /* Search History Dropdown */
+        .search-wrapper { position: relative; }
+        .search-history-box { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-top: -6px; margin-bottom: 10px; box-shadow: var(--shadow); }
+        .history-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); padding: 4px 10px; border-radius: 14px; font-size: 0.78rem; margin: 3px; cursor: pointer; color: var(--text); border: 1px solid var(--border); }
+
+        /* Media & Files */
+        .media-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-top: 8px; display: flex; gap: 10px; align-items: center; }
+        .thumb-box { position: relative; width: 62px; height: 62px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #0f172a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
+        .thumb { width: 100%; height: 100%; object-fit: cover; }
+        .audio-item { background: var(--bg); padding: 8px 10px; border-radius: 10px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--border); }
+        .audio-item audio { height: 34px; max-width: 190px; }
+
+        /* Timeline */
+        .timeline-container { position: relative; padding-left: 22px; border-left: 3px solid var(--primary); margin-top: 14px; margin-left: 8px; }
+        .timeline-item { position: relative; margin-bottom: 18px; }
+        .timeline-item::before { content: ''; position: absolute; left: -30px; top: 12px; width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 3px solid var(--card-bg); box-shadow: 0 0 0 2px var(--primary); }
+        .timeline-item.home-event::before { background: var(--teal); box-shadow: 0 0 0 2px var(--teal); }
+
+        /* Analytics Bars & Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px; text-align: center; box-shadow: var(--shadow); }
+        .stat-box h4 { font-size: 1.35rem; font-weight: 800; color: var(--primary); }
+        .stat-box p { font-size: 0.75rem; color: var(--text-light); margin-top: 2px; font-weight: 600; }
+        .bar-container { background: var(--bg); border-radius: 6px; height: 10px; width: 100%; margin-top: 5px; overflow: hidden; border: 1px solid var(--border); }
+        .bar-fill { background: var(--primary); height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1000; justify-content: center; align-items: flex-end; backdrop-filter: blur(2px); }
+        .modal.center-modal { align-items: center; padding: 16px; }
+        .modal-content { background: var(--card-bg); color: var(--text); width: 100%; max-width: 600px; max-height: 92vh; overflow-y: auto; padding: 20px; border-radius: 24px 24px 0 0; animation: slideUp 0.25s ease; }
+        .modal.center-modal .modal-content { border-radius: 20px; max-width: 420px; animation: popIn 0.2s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        .badge { display: inline-block; padding: 2px 8px; font-size: 0.75rem; font-weight: bold; background: #e0f2fe; color: var(--primary); border-radius: 4px; margin-right: 4px; }
-        .empty-state { text-align: center; color: var(--text-light); padding: 40px 0; }
-        .actions-row { display: flex; gap: 8px; margin-top: 8px; }
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 92%; max-width: 400px; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: #1e293b; color: white; padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; border-left: 5px solid var(--success); }
+        .toast.toast-warning { border-left-color: var(--warning); }
+        .toast.toast-danger { border-left-color: var(--danger); }
+        @keyframes toastIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Avatar Picker Grid */
+        .emoji-grid { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0; margin-bottom: 10px; }
+        .emoji-option { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; flex-shrink: 0; background: var(--bg); }
+        .emoji-option.selected { border-color: var(--primary); background: var(--primary-light); transform: scale(1.08); }
+
+        .empty-state { text-align: center; color: var(--text-light); padding: 36px 16px; font-size: 0.95rem; }
+        .divider { height: 1px; background: var(--border); margin: 12px 0; }
     </style>
 </head>
 <body>
 
-    <header>🩺 Сімейна Медкартка</header>
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container"></div>
 
+    <!-- HEADER -->
+    <header>
+        <div class="header-title">🩺 Сімейна Медкартка <span style="font-size:0.7rem; background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:6px;">PRO</span></div>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="toggleTheme()" title="Змінити тему" id="themeBtn">🌙</button>
+            <button class="icon-btn" onclick="openHelpModal()" title="Довідка">❓</button>
+            <button class="icon-btn" onclick="switchTab('settings')" title="Налаштування">⚙️</button>
+        </div>
+    </header>
+
+    <!-- TABS -->
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('members')">Сім'я</div>
-        <div class="tab" onclick="switchTab('visits')">Візити та Лікарі</div>
-        <div class="tab" onclick="switchTab('settings')">Дані та Backup</div>
+        <div class="tab active" onclick="switchTab('members')"><span class="tab-icon">👨‍👩‍👧‍👦</span>Сім'я</div>
+        <div class="tab" onclick="switchTab('visits')"><span class="tab-icon">📋</span>Журнал</div>
+        <div class="tab" onclick="switchTab('meds')"><span class="tab-icon">💊</span>Ліки й Аптечка</div>
+        <div class="tab" onclick="switchTab('docs')"><span class="tab-icon">📁</span>Файли</div>
+        <div class="tab" onclick="switchTab('timeline')"><span class="tab-icon">🌳</span>Історія</div>
+        <div class="tab" onclick="switchTab('analytics')"><span class="tab-icon">📊</span>Аналітика</div>
+        <div class="tab" onclick="switchTab('settings')"><span class="tab-icon">⚙️</span>Меню</div>
     </div>
 
     <div class="container">
-        <!-- TAB 1: MEMBERS -->
+        <!-- AUTO-BACKUP DUE BANNER -->
+        <div id="backupDueBanner">
+            <div style="font-size:0.85rem;">
+                <b>⏰ Час резервної копії!</b><br>
+                Минув обраний інтервал. Збережіть базу на Google Диск або телефон.
+            </div>
+            <button class="btn btn-sm" style="background:white; color:#ea580c; flex-shrink:0;" onclick="shareBackupToCloud()">☁️ Бекап</button>
+        </div>
+
+        <!-- TAB 1: FAMILY MEMBERS -->
         <div id="tab-members" class="tab-content">
-            <button class="btn" onclick="openMemberModal()">+ Додати члена родини</button>
-            <div id="members-list" style="margin-top: 16px;"></div>
+            <button class="btn" onclick="openMemberModal()">➕ Додати члена родини</button>
+            <div id="members-list" style="margin-top: 14px;"></div>
         </div>
 
-        <!-- TAB 2: VISITS -->
+        <!-- TAB 2: VISITS & HOME ILLNESSES -->
         <div id="tab-visits" class="tab-content" style="display: none;">
-            <button class="btn" onclick="openVisitModal()">+ Додати запис про візит</button>
-            <div id="visits-list" style="margin-top: 16px;"></div>
+            <div class="form-row" style="margin-bottom: 10px;">
+                <button class="btn" onclick="openVisitModal()" style="margin-top:0;">🩺 Візит до лікаря</button>
+                <button class="btn btn-teal" onclick="openHomeIllnessModal()" style="margin-top:0;">🏠 Домашня недуга</button>
+            </div>
+            
+            <div class="card">
+                <div class="search-wrapper">
+                    <label>🔍 Розумний пошук (лікар, діагноз, ліки, #хештег)</label>
+                    <input type="text" id="searchQuery" placeholder="Напр. кардіолог, #рентген, застуда..." onfocus="showSearchHistory()" oninput="renderVisits()" onchange="saveSearchQuery(this.value)">
+                    <div id="searchHistoryBox" class="search-history-box"></div>
+                </div>
+
+                <div class="chips-container" id="quickFilterTags"></div>
+                
+                <div class="form-row">
+                    <div>
+                        <label>Член родини</label>
+                        <select id="filterMember" onchange="renderVisits()"><option value="">Усі</option></select>
+                    </div>
+                    <div>
+                        <label>Тип запису</label>
+                        <select id="filterType" onchange="renderVisits()">
+                            <option value="">Усі записи</option>
+                            <option value="doctor">🩺 Візити до лікаря</option>
+                            <option value="home">🏠 Домашнє лікування</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Сортування</label>
+                        <select id="sortOrder" onchange="renderVisits()">
+                            <option value="desc">Новіші зверху</option>
+                            <option value="asc">Старіші зверху</option>
+                            <option value="cost_desc">Найдорожчі ₴</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="visits-list"></div>
         </div>
 
-        <!-- TAB 3: SETTINGS / BACKUP -->
-        <div id="tab-settings" class="tab-content" style="display: none;">
+        <!-- TAB 3: MEDICATION TRACKER & HOME PHARMACY CABINET -->
+        <div id="tab-meds" class="tab-content" style="display: none;">
+            <!-- Sub-navigation switch -->
+            <div class="sub-tabs">
+                <div class="sub-tab active" id="subTabBtnTracker" onclick="switchMedSubTab('tracker')">📅 Трекер прийому</div>
+                <div class="sub-tab" id="subTabBtnCabinet" onclick="switchMedSubTab('cabinet')">🧰 Домашня аптечка</div>
+            </div>
+
+            <!-- SUB-VIEW 1: PILL TRACKER -->
+            <div id="med-sub-tracker">
+                <button class="btn btn-purple" onclick="openMedModal()" style="margin-top:0; margin-bottom:12px;">➕ Призначити курс ліків / Вітамінів</button>
+
+                <div class="date-navigator">
+                    <button class="date-nav-btn" onclick="shiftMedDate(-1)">◀</button>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.75rem; color:var(--text-light); font-weight:700;">ВІДМІТКА ПРИЙОМУ ЗА ДАТУ:</div>
+                        <input type="date" id="medTrackerDate" onchange="renderMeds()" style="margin:2px 0 0 0; padding:4px 8px; font-weight:800; font-size:0.95rem; text-align:center; border:none; background:transparent; width:auto;">
+                    </div>
+                    <button class="date-nav-btn" onclick="shiftMedDate(1)">▶</button>
+                </div>
+
+                <div class="form-row" style="margin-bottom:10px;">
+                    <div>
+                        <select id="medFilterMember" onchange="renderMeds()" style="margin:0;"><option value="">👨‍👩‍👧‍👦 Усі члени родини</option></select>
+                    </div>
+                    <div>
+                        <select id="medFilterStatus" onchange="renderMeds()" style="margin:0;">
+                            <option value="active">🟢 Активні курси</option>
+                            <option value="completed">🗄 Завершені / Архів</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="meds-list"></div>
+            </div>
+
+            <!-- SUB-VIEW 2: HOME PHARMACY CABINET (АПТЕЧКА) -->
+            <div id="med-sub-cabinet" style="display:none;">
+                <button class="btn btn-teal" onclick="openCabinetModal()" style="margin-top:0; margin-bottom:12px;">➕ Додати ліки в домашню аптечку</button>
+
+                <!-- Summary badges for cabinet -->
+                <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:12px;">
+                    <div class="stat-box" style="padding:8px;">
+                        <h4 id="cabStatTotal" style="font-size:1.15rem;">0</h4>
+                        <p style="font-size:0.7rem;">Усього в аптечці</p>
+                    </div>
+                    <div class="stat-box" style="padding:8px;">
+                        <h4 id="cabStatExpiring" style="font-size:1.15rem; color:var(--warning);">0</h4>
+                        <p style="font-size:0.7rem;">Скоро вийде термін</p>
+                    </div>
+                    <div class="stat-box" style="padding:8px;">
+                        <h4 id="cabStatExpired" style="font-size:1.15rem; color:var(--danger);">0</h4>
+                        <p style="font-size:0.7rem;">Прострочено!</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <label>🔍 Пошук в аптечці (назва, від чого, де лежить)</label>
+                    <input type="text" id="cabSearchQuery" placeholder="Напр. нурофен, від температури, краплі..." oninput="renderCabinet()">
+                    <div class="form-row">
+                        <div>
+                            <label>Категорія</label>
+                            <select id="cabFilterCat" onchange="renderCabinet()" style="margin-bottom:0;">
+                                <option value="">Усі категорії</option>
+                                <option value="🌡 Жарознижувальне / Застуда">🌡 Жарознижувальне / Застуда</option>
+                                <option value="💊 Знеболювальне / Спазми">💊 Знеболювальне / Спазми</option>
+                                <option value="🤢 Шлунок / Травлення">🤢 Шлунок / Травлення</option>
+                                <option value="🩹 Антисептики / Перев'язка">🩹 Антисептики / Перев'язка</option>
+                                <option value="🤧 Алергія">🤧 Алергія</option>
+                                <option value="👂 Очі / Вуха / Ніс">👂 Очі / Вуха / Ніс</option>
+                                <option value="❤️ Серце / Тиск">❤️ Серце / Тиск</option>
+                                <option value="🧴 Мазі / Гелі">🧴 Мазі / Гелі</option>
+                                <option value="🦠 Антибіотики">🦠 Антибіотики</option>
+                                <option value="🍓 Вітаміни / Інше">🍓 Вітаміни / Інше</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Термін придатності</label>
+                            <select id="cabFilterExp" onchange="renderCabinet()" style="margin-bottom:0;">
+                                <option value="all">Усі препарати</option>
+                                <option value="ok">🟢 Тільки придатні</option>
+                                <option value="expiring">🟡 Скоро виходить термін</option>
+                                <option value="expired">🔴 Прострочені (на викид)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cabinet-list"></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DOCUMENTS ARCHIVE -->
+        <div id="tab-docs" class="tab-content" style="display: none;">
             <div class="card">
-                <h3>Резервне копіювання</h3>
-                <p>Збережіть усі дані (профілі, візити, фотографії) у файл резервної копії або відновіть їх із файлу.</p>
-                <button class="btn" onclick="exportData()">Експортувати дані (Backup)</button>
-                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="margin-top: 8px;">Імпортувати дані</button>
-                <input type="file" id="importFile" style="display: none;" onchange="importData(event)">
+                <h3>📁 Галерея аналізів, виписок та знімків</h3>
+                <label>Пошук за назвою або #хештегом</label>
+                <input type="text" id="docSearchQuery" placeholder="Введіть #аналізи, #рентген, #УЗД..." oninput="renderDocumentsArchive()">
+                <div class="chips-container" id="docQuickTags"></div>
+                <label>Фільтр по члену родини</label>
+                <select id="docFilterMember" onchange="renderDocumentsArchive()"><option value="">Усі члени родини</option></select>
+            </div>
+            <div id="documents-archive-list"></div>
+        </div>
+
+        <!-- TAB 5: TIMELINE -->
+        <div id="tab-timeline" class="tab-content" style="display: none;">
+            <div class="card">
+                <h3>🌳 Хронологічне дерево здоров'я</h3>
+                <label>Оберіть члена родини</label>
+                <select id="timelineMemberSelect" onchange="renderTimeline()"></select>
+            </div>
+            <div id="timeline-content" style="margin-top: 10px;"></div>
+        </div>
+
+        <!-- TAB 6: ANALYTICS & FINANCES -->
+        <div id="tab-analytics" class="tab-content" style="display: none;">
+            <div class="card">
+                <h3>🎛 Фільтри аналітики та витрат</h3>
+                <div class="form-row">
+                    <div>
+                        <label>Член родини</label>
+                        <select id="analyticsMember" onchange="renderAnalytics()"><option value="">Уся сім'я</option></select>
+                    </div>
+                    <div>
+                        <label>Період</label>
+                        <select id="analyticsPeriod" onchange="renderAnalytics()">
+                            <option value="all">За весь час</option>
+                            <option value="30">Останні 30 днів</option>
+                            <option value="180">Останні 6 місяців</option>
+                            <option value="365">Останній рік</option>
+                            <option value="year_current">Поточний рік</option>
+                        </select>
+                    </div>
+                </div>
+                <label>Фільтр за лікарем / діагнозом (необов'язково)</label>
+                <input type="text" id="analyticsQuery" placeholder="Напр. стоматолог або грип..." oninput="renderAnalytics()" style="margin-bottom:0;">
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <h4 id="anTotalSpent" style="color:var(--warning);">0 ₴</h4>
+                    <p>💰 Загальні витрати</p>
+                </div>
+                <div class="stat-box">
+                    <h4 id="anTotalEvents">0</h4>
+                    <p>📋 Усього записів (Лікар / Дім)</p>
+                </div>
+                <div class="stat-box">
+                    <h4 id="anDoctorSpent" style="color:var(--primary);">0 ₴</h4>
+                    <p>🩺 На лікарів та аналізи</p>
+                </div>
+                <div class="stat-box">
+                    <h4 id="anMedsSpent" style="color:var(--teal);">0 ₴</h4>
+                    <p>💊 На ліки в аптеках</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>👨‍👩‍👧‍👦 Витрати та хвороби по членах сім'ї</h3>
+                <div id="analyticsMembersBars" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>💸 Найдорожчі діагнози / статті витрат</h3>
+                <div id="analyticsCostDiagnosesBars" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Найчастіші причини звернень / хвороби</h3>
+                <div id="analyticsFreqDiagnosesBars" style="margin-top: 10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3>📅 Динаміка по місяцях (Кількість + Витрати)</h3>
+                <div id="analyticsMonthlyBars" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+
+        <!-- TAB 7: SETTINGS & CLOUD BACKUP -->
+        <div id="tab-settings" class="tab-content" style="display: none;">
+            <!-- BACKUP & GOOGLE DRIVE CARD -->
+            <div class="card" style="border: 2px solid var(--primary);">
+                <h3>☁️ Резервне копіювання (Телефон + Google Диск)</h3>
+                <p id="lastBackupInfo" style="font-weight:600; color:var(--primary); margin-bottom:10px;">Останній бекап: ще не виконувався</p>
+
+                <label>⏰ Інтервал нагадування та автоконтролю бекапу</label>
+                <select id="backupIntervalSelect" onchange="saveBackupInterval(this.value)">
+                    <option value="0">Вимкнено (тільки вручну)</option>
+                    <option value="1">Щодня (кожні 24 години)</option>
+                    <option value="7">Раз на тиждень (кожні 7 днів)</option>
+                    <option value="14">Раз на 2 тижні (кожні 14 днів)</option>
+                    <option value="30">Раз на місяць (кожні 30 днів)</option>
+                </select>
+
+                <div class="form-row">
+                    <button class="btn btn-teal" onclick="shareBackupToCloud()">☁️ Надіслати на Google Диск</button>
+                    <button class="btn" onclick="exportData()">📱 Завантажити в телефон</button>
+                </div>
+                <p style="font-size:0.78rem; margin-top:6px;">💡 <i>Кнопка «Надіслати на Google Диск» відкриває вікно збереження Android — просто оберіть іконку <b>Google Диск</b> (або Telegram), і повна база збережеться у вашій хмарі!</i></p>
+
+                <div class="divider"></div>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">⬆️ Відновити базу з файлу Backup (.json)</button>
+                <input type="file" id="importFile" accept=".json,application/json" style="display: none;" onchange="importData(event)">
+
+                <!-- Advanced Direct Google Drive API Token Upload -->
+                <details style="margin-top:12px; font-size:0.82rem; color:var(--text-light);">
+                    <summary style="cursor:pointer; font-weight:700;">🔧 Пряме вивантаження через Google Drive API (Опціонально)</summary>
+                    <div style="margin-top:8px;">
+                        <p>Якщо ви маєте власний OAuth2 Access Token для Google Drive API, вставте його нижче для прямого завантаження без діалогових вікон:</p>
+                        <input type="password" id="gdriveAccessToken" placeholder="ya29.a0AfH6SM..." onchange="saveGDriveToken(this.value)">
+                        <button class="btn btn-outline btn-sm" onclick="uploadDirectToGoogleDrive()">🚀 Вивантажити напряму через API</button>
+                    </div>
+                </details>
+            </div>
+
+            <div class="card">
+                <h3>🎨 Зовнішній вигляд та Налаштування</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0;">
+                    <span><b>Темна тема (Нічний режим)</b></span>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleTheme()" id="themeToggleText">Перемкнути</button>
+                </div>
+                <div class="divider"></div>
+                <label>🏷️ Додати власний сімейний #хештег у швидкий список</label>
+                <div class="form-row">
+                    <input type="text" id="newCustomTagInput" placeholder="напр. #алергія або #зуби" style="margin:0;">
+                    <button class="btn btn-sm" onclick="addCustomTag()" style="width:120px;">Додати</button>
+                </div>
+                <div id="customTagsManageList" class="chips-container" style="margin-top:8px;"></div>
+                <div class="divider"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><b>Історія пошукових запитів</b></span>
+                    <button class="btn btn-danger btn-sm" onclick="clearSearchHistory()">Очистити історію</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>❓ Довідка та Підказки</h3>
+                <button class="btn btn-outline" onclick="openHelpModal()">📖 Відкрити інструкцію користувача</button>
             </div>
         </div>
     </div>
 
-    <!-- MEMBER MODAL -->
+    <!-- MODAL: ADD/EDIT MEMBER -->
     <div id="memberModal" class="modal">
         <div class="modal-content">
-            <h3>Новий член родини</h3>
-            <label>ПІБ / Ім'я</label>
-            <input type="text" id="mName" placeholder="напр. Іван Петренко">
-            <label>Дата народження</label>
-            <input type="date" id="mBirth">
-            <label>Група крові</label>
-            <input type="text" id="mBlood" placeholder="напр. 2+ (A+)">
-            <label>Алергії та особливі застереження</label>
-            <textarea id="mAllergies" placeholder="напр. Алергія на пеніцилін"></textarea>
-            <button class="btn" onclick="saveMember()">Зберегти</button>
+            <h3 id="memberModalTitle">Новий член родини</h3>
+            <input type="hidden" id="mEditId">
+            
+            <label>Оберіть аватарку або завантажте фото</label>
+            <div class="emoji-grid" id="emojiPicker"></div>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+                <div class="avatar-circle" id="mAvatarPreview">👨</div>
+                <div style="flex:1;">
+                    <input type="file" id="mPhotoInput" accept="image/*" onchange="handleMemberPhoto(this)" style="margin:0; padding:6px; font-size:0.8rem;">
+                    <small style="color:var(--text-light); font-size:0.75rem;">Можна обрати емодзі зверху або своє фото</small>
+                </div>
+            </div>
+
+            <label>ПІБ / Ім'я *</label>
+            <input type="text" id="mName" placeholder="напр. Олександр Анатолійович">
+            
+            <div class="form-row">
+                <div>
+                    <label>Дата народження</label>
+                    <input type="date" id="mBirth">
+                </div>
+                <div>
+                    <label>Група крові та резус</label>
+                    <input type="text" id="mBlood" placeholder="напр. II+ (A+)">
+                </div>
+            </div>
+
+            <label>⚠️ Алергії та непереносимість ліків</label>
+            <input type="text" id="mAllergies" placeholder="напр. Пеніцилін, пилок амброзії (або 'немає')">
+
+            <label>📌 Хронічні стани / Особливі примітки</label>
+            <textarea id="mChronic" rows="2" placeholder="напр. Носить окуляри, операція у 2019 році..."></textarea>
+
+            <button class="btn" onclick="saveMember()">✅ Зберегти профіль</button>
             <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
         </div>
     </div>
 
-    <!-- VISIT MODAL -->
-    <div id="visitModal" class="modal">
+    <!-- MODAL: ADD/EDIT MEDICATION COURSE (TRACKER) -->
+    <div id="medModal" class="modal">
         <div class="modal-content">
-            <h3>Запис про візит до лікаря</h3>
-            <label>Член родини</label>
-            <select id="vMemberId"></select>
-            <label>Дата візиту</label>
-            <input type="date" id="vDate">
-            <label>Спеціалізація лікаря / ПІБ</label>
-            <input type="text" id="vDoctor" placeholder="напр. Кардіолог Коваленко С.М.">
-            <label>Клініка / Лікарня</label>
-            <input type="text" id="vClinic" placeholder="напр. Поліклініка №2">
-            <label>Скарги / Причина звернення</label>
-            <textarea id="vReason" placeholder="Біль у грудях, тиск..."></textarea>
-            <label>Поставлений діагноз</label>
-            <input type="text" id="vDiagnosis" placeholder="Гіпертонія І ступеня">
-            <label>Призначене лікування / Препарати</label>
-            <textarea id="vTreatment" placeholder="Таблетки такі-то..."></textarea>
-            
-            <label>Фото виписки / рентгену / аналізу</label>
-            <input type="file" id="vFile" accept="image/*">
-            
-            <button class="btn" onclick="saveVisit()">Зберегти візит</button>
+            <h3 id="medModalTitle">💊 Призначити курс прийому ліків</h3>
+            <input type="hidden" id="medEditId">
+
+            <label>Член родини *</label>
+            <select id="medMemberId"></select>
+
+            <label>Назва препарату / вітаміну *</label>
+            <input type="text" id="medName" placeholder="напр. Аугментин, Ібупрофен, Вітамін D3">
+
+            <div class="form-row">
+                <div>
+                    <label>Разове дозування</label>
+                    <input type="text" id="medDose" placeholder="1 таб. / 5 мл / 2 капс.">
+                </div>
+                <div>
+                    <label>Правило прийому</label>
+                    <select id="medRule">
+                        <option value="Після їжі">🍽 Після їжі</option>
+                        <option value="До їжі (за 30 хв)">⏳ До їжі (за 30 хв)</option>
+                        <option value="Під час їжі">🥗 Під час їжі</option>
+                        <option value="Незалежно від їжі">💧 Незалежно від їжі</option>
+                        <option value="Перед сном">🛌 Перед сном</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Коли приймати протягом дня? (оберіть потрібні часи) *</label>
+            <div style="margin: 6px 0 12px 0;">
+                <label class="slot-check-label"><input type="checkbox" class="med-slot-cb" value="🌅 Ранок" checked> 🌅 Ранок</label>
+                <label class="slot-check-label"><input type="checkbox" class="med-slot-cb" value="☀️ Обід"> ☀️ Обід</label>
+                <label class="slot-check-label"><input type="checkbox" class="med-slot-cb" value="🌆 Вечір" checked> 🌆 Вечір</label>
+                <label class="slot-check-label"><input type="checkbox" class="med-slot-cb" value="🌙 Ніч"> 🌙 Ніч</label>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label>Дата початку курсу *</label>
+                    <input type="date" id="medStartDate">
+                </div>
+                <div>
+                    <label>Тривалість (днів) *</label>
+                    <input type="number" id="medDays" value="7" min="1" max="365">
+                </div>
+            </div>
+
+            <label>Примітка / При якій хворобі</label>
+            <input type="text" id="medNotes" placeholder="напр. Запивати великою кількістю води">
+
+            <button class="btn btn-purple" onclick="saveMedCourse()">✅ Зберегти курс лікування</button>
             <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
         </div>
+    </div>
+
+    <!-- MODAL: ADD/EDIT HOME CABINET MEDICINE (ДОМАШНЯ АПТЕЧКА) -->
+    <div id="cabinetModal" class="modal">
+        <div class="modal-content">
+            <h3 id="cabModalTitle">🧰 Додати ліки в домашню аптечку</h3>
+            <input type="hidden" id="cabEditId">
+
+            <label>Назва препарату та форма випуску *</label>
+            <input type="text" id="cabName" placeholder="напр. Нурофен Форте сироп, Цитрамон, Бетадин">
+
+            <div class="form-row">
+                <div>
+                    <label>Категорія / Призначення</label>
+                    <select id="cabCategory">
+                        <option value="🌡 Жарознижувальне / Застуда">🌡 Жарознижувальне / Застуда</option>
+                        <option value="💊 Знеболювальне / Спазми">💊 Знеболювальне / Спазми</option>
+                        <option value="🤢 Шлунок / Травлення">🤢 Шлунок / Травлення</option>
+                        <option value="🩹 Антисептики / Перев'язка">🩹 Антисептики / Перев'язка</option>
+                        <option value="🤧 Алергія">🤧 Алергія</option>
+                        <option value="👂 Очі / Вуха / Ніс">👂 Очі / Вуха / Ніс</option>
+                        <option value="❤️ Серце / Тиск">❤️ Серце / Тиск</option>
+                        <option value="🧴 Мазі / Гелі">🧴 Мазі / Гелі</option>
+                        <option value="🦠 Антибіотики">🦠 Антибіотики</option>
+                        <option value="🍓 Вітаміни / Інше">🍓 Вітаміни / Інше</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Придатний ДО (Місяць і Рік) *</label>
+                    <input type="month" id="cabExpiry">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label>Скільки залишилося в наявності</label>
+                    <input type="text" id="cabQty" placeholder="напр. 12 таб. / Пів флакона">
+                </div>
+                <div>
+                    <label>Де зберігається вдома?</label>
+                    <input type="text" id="cabLocation" placeholder="напр. Коробка на кухні / Холодильник">
+                </div>
+            </div>
+
+            <label>Від чого / Інструкція / Дозування своїми словами</label>
+            <textarea id="cabNotes" rows="2" placeholder="напр. Дитині по 5 мл при температурі вище 38.5..."></textarea>
+
+            <button class="btn btn-teal" onclick="saveCabinetItem()">✅ Зберегти в аптечку</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+        </div>
+    </div>
+
+    <!-- MODAL: DOCTOR VISIT -->
+    <div id="visitModal" class="modal">
+        <div class="modal-content">
+            <h3 id="visitModalTitle">🩺 Візит до лікаря / Обстеження</h3>
+            <input type="hidden" id="vEditId">
+            
+            <div class="form-row">
+                <div>
+                    <label>Член родини *</label>
+                    <select id="vMemberId"></select>
+                </div>
+                <div>
+                    <label>Дата візиту *</label>
+                    <input type="date" id="vDate">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label>Спеціалізація та ПІБ лікаря *</label>
+                    <input type="text" id="vDoctor" placeholder="Кардіолог Коваленко С.М.">
+                </div>
+                <div>
+                    <label>Клініка / Лабораторія</label>
+                    <input type="text" id="vClinic" placeholder="Меділабс / Поліклініка №1">
+                </div>
+            </div>
+
+            <label>Скарги / Причина звернення</label>
+            <textarea id="vReason" rows="2" placeholder="Що турбувало, які симптоми..."></textarea>
+
+            <label>Поставлений діагноз / Висновок</label>
+            <input type="text" id="vDiagnosis" placeholder="напр. Гострий бронхіт / Профогляд">
+
+            <label>💊 Призначене лікування та рекомендації</label>
+            <textarea id="vTreatment" rows="3" placeholder="Назви препаратів, дозування, скільки днів приймати..."></textarea>
+
+            <!-- FINANCIAL BLOCK -->
+            <div class="card" style="background:var(--bg); padding:12px; margin: 8px 0;">
+                <label style="margin-top:0; color:var(--text);">💰 Бухгалтерія візиту (грн)</label>
+                <div class="form-row">
+                    <div>
+                        <label>Прийом / Аналізи (₴)</label>
+                        <input type="number" id="vCostDoctor" placeholder="0" min="0" style="margin-bottom:0;">
+                    </div>
+                    <div>
+                        <label>Куплені ліки в аптеці (₴)</label>
+                        <input type="number" id="vCostMeds" placeholder="0" min="0" style="margin-bottom:0;">
+                    </div>
+                </div>
+            </div>
+
+            <!-- HASHTAGS -->
+            <label>🏷️ Хештеги запису (натисніть для швидкого вибору)</label>
+            <input type="text" id="vTags" placeholder="#аналізи #профогляд">
+            <div id="vTagChips" class="chips-container"></div>
+
+            <!-- MEDIA ATTACHMENTS -->
+            <div class="divider"></div>
+            <label>📎 Фото виписок, рентгену, PDF-аналізів або відео</label>
+            <input type="file" id="vMediaFilePicker" accept="image/*,video/*,application/pdf" multiple onchange="addNewMediaItem(this, 'vMediaItemsList')">
+            <div id="vMediaItemsList"></div>
+
+            <!-- AUDIO / DICTAPHONE -->
+            <div class="divider"></div>
+            <label>🎙 Запис прийому лікаря (Диктофон або аудіофайл)</label>
+            <div class="form-row" style="margin-bottom:8px;">
+                <button type="button" class="btn btn-purple btn-sm" id="recordAudioBtn" onclick="toggleVoiceRecording()" style="flex:1; padding:10px;">🔴 Записати на диктофон</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('vAudioFiles').click()" style="flex:1; padding:10px;">📂 Вибрати аудіофайл</button>
+            </div>
+            <input type="file" id="vAudioFiles" accept="audio/*" multiple style="display:none;">
+            <div id="recordingStatus" style="display:none; color:var(--danger); font-weight:bold; font-size:0.85rem; text-align:center; margin-bottom:8px;">⏱ Триває запис... Говоріть!</div>
+            <div id="vAudioPreview"></div>
+            
+            <button class="btn" onclick="saveVisit()" style="margin-top:16px;">✅ Зберегти візит</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+        </div>
+    </div>
+
+    <!-- MODAL: HOME ILLNESS -->
+    <div id="homeIllnessModal" class="modal">
+        <div class="modal-content">
+            <h3 id="hModalTitle">🏠 Домашня недуга (Без лікаря)</h3>
+            <input type="hidden" id="hEditId">
+            
+            <div class="form-row">
+                <div>
+                    <label>Член родини *</label>
+                    <select id="hMemberId"></select>
+                </div>
+                <div>
+                    <label>Дата початку *</label>
+                    <input type="date" id="hDate">
+                </div>
+            </div>
+
+            <label>Що сталося? (Назва недуги / Стан) *</label>
+            <input type="text" id="hDiagnosis" placeholder="напр. Застуда, Герпес на губі, Температура 38.2">
+
+            <label>Симптоми та перебіг (скільки днів тривало)</label>
+            <textarea id="hReason" rows="2" placeholder="Нежить, біль у горлі, тривало 4 дні..."></textarea>
+
+            <label>💊 Чим лікували вдома (Препарати, процедури)</label>
+            <textarea id="hTreatment" rows="2" placeholder="Ацикловір мазь, парацетамол, гарячий чай..."></textarea>
+
+            <label>💰 Витрати на ліки в аптеці (грн)</label>
+            <input type="number" id="hCostMeds" placeholder="0" min="0">
+
+            <label>🏷️ Хештеги (натисніть, щоб додати)</label>
+            <input type="text" id="hTags" placeholder="#самолікування #продуло">
+            <div class="chips-container" id="hTagChips"></div>
+
+            <label>📎 Фото (напр. висипка, показники термометра, чек чи коробка ліків)</label>
+            <input type="file" id="hMediaFilePicker" accept="image/*,application/pdf" multiple onchange="addNewMediaItem(this, 'hMediaItemsList')">
+            <div id="hMediaItemsList"></div>
+            
+            <button class="btn btn-teal" onclick="saveHomeIllness()" style="margin-top:16px;">✅ Зберегти запис</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+        </div>
+    </div>
+
+    <!-- MODAL: EMERGENCY DOCTOR CARD -->
+    <div id="emergencyModal" class="modal center-modal">
+        <div class="modal-content" id="emergencyModalContent"></div>
+    </div>
+
+    <!-- MODAL: CONFIRMATION DIALOG -->
+    <div id="confirmModal" class="modal center-modal">
+        <div class="modal-content" style="text-align:center;">
+            <div style="font-size:2.5rem; margin-bottom:8px;">⚠️</div>
+            <h3 id="confirmTitle">Підтвердження</h3>
+            <p id="confirmMessage" style="margin: 10px 0 18px 0; font-size:0.95rem;"></p>
+            <div class="form-row">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Скасувати</button>
+                <button class="btn btn-danger" id="confirmYesBtn">Видалити</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: HELP / FAQ -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <h3>📖 Довідка по додатку «Сімейна Медкартка PRO»</h3>
+            <div class="divider"></div>
+            <p><b>1. Трекер ліків та Домашня аптечка (💊 Ліки й Аптечка):</b><br>У вкладці ліків є перемикач: <b>«Трекер прийому»</b> дозволяє відмічати галочками випиті таблетки вранці чи ввечері, а <b>«Домашня аптечка»</b> зберігає ревізію всіх наявних вдома медикаментів і автоматично попереджає червоним кольором, коли виходить їхній термін придатності!</p>
+            <p><b>2. Резервне копіювання на Google Диск та Інтервал:</b><br>У вкладці «⚙️ Меню» оберіть інтервал (наприклад, раз на тиждень або місяць). Програма сама нагадає, коли прийде час. Натисніть <b>«☁️ Надіслати на Google Диск»</b> і оберіть у меню телефона Google Диск — файл збережеться у хмарі за 2 секунди!</p>
+            <p><b>3. Фінансова бухгалтерія:</b><br>Вказуйте витрати на прийом та аптеку. У вкладці <b>«Аналітика»</b> ви бачите статистику витрат по кожному члену сім'ї.</p>
+            <button class="btn" onclick="closeModals()">Зрозуміло, дякую!</button>
+        </div>
+    </div>
+
+    <!-- MODAL: MEDIA VIEWER -->
+    <div id="mediaViewerModal" class="modal" onclick="closeMediaViewer(event)" style="background: rgba(0,0,0,0.92); justify-content: center; align-items: center;">
+        <div style="position: relative; width: 96%; max-height: 92vh; text-align: center;" id="mediaViewerContainer"></div>
     </div>
 
     <script>
-        // Database simulation using localStorage (IndexedDB wrapper or simple robust JSON storage)
-        let db = {
-            members: JSON.parse(localStorage.getItem('med_members') || '[]'),
-            visits: JSON.parse(localStorage.getItem('med_visits') || '[]')
-        };
+        /* ==========================================
+           1. STATE, CONSTANTS & HASHTAGS
+        ========================================== */
+        const EMOJI_AVATARS = ['👨', '👩', '👦', '👧', '👴', '👵', '👶', '🧔', '👱‍♀️', '🦸‍♂️'];
+        
+        const DEFAULT_SERIOUS_TAGS = ['#аналізи', '#кров', '#рентген', '#УЗД', '#рецепт', '#педіатр', '#стоматолог', '#щеплення', '#профогляд', '#виписка', '#кардіолог', '#ЛОР'];
+        const DEFAULT_FUNNY_TAGS = ['#самолікування', '#продуло', '#психосоматика', '#вікове', '#іпохондрія', '#золота_аптека', '#хруснуло_в_спині', '#дитячий_садок'];
 
-        function saveData() {
-            localStorage.setItem('med_members', JSON.stringify(db.members));
-            localStorage.setItem('med_visits', JSON.stringify(db.visits));
-            renderAll();
+        let dbData = { members: [], visits: [], medications: [], cabinet: [] };
+        let appSettings = JSON.parse(localStorage.getItem('med_pro_settings') || JSON.stringify({
+            theme: 'light',
+            customTags: [],
+            searchHistory: [],
+            backupIntervalDays: 7,
+            lastBackupTimestamp: null,
+            gdriveToken: ''
+        }));
+
+        let selectedMemberAvatar = '👨';
+        let currentVisitMedia = [];
+        let currentVisitAudio = [];
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        document.getElementById('medTrackerDate').value = new Date().toISOString().split('T')[0];
+
+        /* ==========================================
+           2. INDEXED-DB ENGINE (UNLIMITED STORAGE)
+        ========================================== */
+        const DB_NAME = 'FamilyMedProDB';
+        const DB_VERSION = 1;
+        let idb = null;
+
+        function initDB() {
+            return new Promise((resolve) => {
+                let request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = function(e) {
+                    let db = e.target.result;
+                    if (!db.objectStoreNames.contains('app_store')) {
+                        db.createObjectStore('app_store');
+                    }
+                };
+                request.onsuccess = function(e) {
+                    idb = e.target.result;
+                    loadFromIDB().then(resolve);
+                };
+                request.onerror = function(e) {
+                    console.error("IndexedDB error:", e);
+                    resolve();
+                };
+            });
         }
 
+        function loadFromIDB() {
+            return new Promise((resolve) => {
+                let tx = idb.transaction(['app_store'], 'readonly');
+                let store = tx.objectStore('app_store');
+                let req = store.get('main_data');
+                req.onsuccess = function() {
+                    if (req.result) {
+                        dbData = req.result;
+                        if (!dbData.medications) dbData.medications = [];
+                        if (!dbData.cabinet) dbData.cabinet = [];
+                        resolve();
+                    } else {
+                        let oldMembers = JSON.parse(localStorage.getItem('med_members') || '[]');
+                        let oldVisits = JSON.parse(localStorage.getItem('med_visits') || '[]');
+                        dbData = { members: oldMembers, visits: oldVisits, medications: [], cabinet: [] };
+                        saveToIDB().then(resolve);
+                    }
+                };
+                req.onerror = () => resolve();
+            });
+        }
+
+        function saveToIDB() {
+            return new Promise((resolve) => {
+                if (!idb) { resolve(); return; }
+                let tx = idb.transaction(['app_store'], 'readwrite');
+                let store = tx.objectStore('app_store');
+                store.put(dbData, 'main_data');
+                tx.oncomplete = () => {
+                    renderAll();
+                    resolve();
+                };
+            });
+        }
+
+        function saveSettings() {
+            localStorage.setItem('med_pro_settings', JSON.stringify(appSettings));
+            checkBackupSchedule();
+        }
+
+        /* ==========================================
+           3. UI HELPERS: TOASTS, CONFIRM, THEME, AGE
+        ========================================== */
+        function showToast(message, type = 'success') {
+            let container = document.getElementById('toast-container');
+            let toast = document.createElement('div');
+            toast.className = `toast ${type === 'warning' ? 'toast-warning' : ''} ${type === 'danger' ? 'toast-danger' : ''}`;
+            let icon = type === 'success' ? '✅' : (type === 'warning' ? '✏️' : '🗑️');
+            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = '0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        let confirmCallback = null;
+        function askConfirm(title, message, onYes) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            confirmCallback = onYes;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        document.getElementById('confirmYesBtn').onclick = function() {
+            if (confirmCallback) confirmCallback();
+            closeConfirmModal();
+        };
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            confirmCallback = null;
+        }
+
+        function applyTheme() {
+            if (appSettings.theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.getElementById('themeBtn').innerText = '☀️';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                document.getElementById('themeBtn').innerText = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            appSettings.theme = appSettings.theme === 'dark' ? 'light' : 'dark';
+            saveSettings();
+            applyTheme();
+            showToast(appSettings.theme === 'dark' ? 'Увімкнено темну тему 🌙' : 'Увімкнено світлу тему ☀️');
+        }
+
+        function calculateAge(birthDateStr) {
+            if (!birthDateStr) return '';
+            let birth = new Date(birthDateStr);
+            let now = new Date();
+            let years = now.getFullYear() - birth.getFullYear();
+            let months = now.getMonth() - birth.getMonth();
+            if (months < 0 || (months === 0 && now.getDate() < birth.getDate())) {
+                years--;
+                months += 12;
+            }
+            if (years < 0) return '';
+            if (years === 0) return `${months} міс.`;
+            if (years < 7 && months > 0) return `${years} р. ${months} міс.`;
+            return `${years} р.`;
+        }
+
+        function compressImage(file, maxWidth = 1200, quality = 0.78) {
+            return new Promise((resolve) => {
+                let reader = new FileReader();
+                reader.onload = function(event) {
+                    let img = new Image();
+                    img.onload = function() {
+                        let canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        let ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        /* ==========================================
+           4. NAVIGATION & TAG CHIPS
+        ========================================== */
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             
-            if(tabName === 'members') {
-                document.querySelectorAll('.tab')[0].classList.add('active');
-                document.getElementById('tab-members').style.display = 'block';
-            } else if(tabName === 'visits') {
-                document.querySelectorAll('.tab')[1].classList.add('active');
-                document.getElementById('tab-visits').style.display = 'block';
-            } else if(tabName === 'settings') {
-                document.querySelectorAll('.tab')[2].classList.add('active');
-                document.getElementById('tab-settings').style.display = 'block';
+            const tabMap = { 'members': 0, 'visits': 1, 'meds': 2, 'docs': 3, 'timeline': 4, 'analytics': 5, 'settings': 6 };
+            if (tabMap[tabName] !== undefined) {
+                document.querySelectorAll('.tab')[tabMap[tabName]].classList.add('active');
+            }
+            document.getElementById('tab-' + tabName).style.display = 'block';
+
+            if (tabName === 'visits') { updateDropdowns(); renderQuickFilterTags(); renderVisits(); }
+            if (tabName === 'meds') { updateDropdowns(); renderMeds(); renderCabinet(); }
+            if (tabName === 'docs') { updateDropdowns(); renderDocQuickTags(); renderDocumentsArchive(); }
+            if (tabName === 'timeline') { updateDropdowns(); renderTimeline(); }
+            if (tabName === 'analytics') { updateDropdowns(); renderAnalytics(); }
+            if (tabName === 'settings') { renderCustomTagsManage(); updateBackupSettingsUI(); }
+        }
+
+        function switchMedSubTab(sub) {
+            document.getElementById('subTabBtnTracker').classList.toggle('active', sub === 'tracker');
+            document.getElementById('subTabBtnCabinet').classList.toggle('active', sub === 'cabinet');
+            document.getElementById('med-sub-tracker').style.display = sub === 'tracker' ? 'block' : 'none';
+            document.getElementById('med-sub-cabinet').style.display = sub === 'cabinet' ? 'block' : 'none';
+            if (sub === 'tracker') renderMeds();
+            else renderCabinet();
+        }
+
+        function getAllTags() {
+            return {
+                serious: [...DEFAULT_SERIOUS_TAGS, ...(appSettings.customTags || [])],
+                funny: DEFAULT_FUNNY_TAGS
+            };
+        }
+
+        function renderTagChipsForInput(containerId, inputId) {
+            let tags = getAllTags();
+            let container = document.getElementById(containerId);
+            let html = tags.serious.map(t => `<span class="chip" onclick="appendTagToInput('${inputId}', '${t}')">${t}</span>`).join('');
+            html += tags.funny.map(t => `<span class="chip chip-funny" onclick="appendTagToInput('${inputId}', '${t}')">😄 ${t}</span>`).join('');
+            container.innerHTML = html;
+        }
+
+        function appendTagToInput(inputId, tag) {
+            let inp = document.getElementById(inputId);
+            let val = inp.value.trim();
+            if (!val.includes(tag)) {
+                inp.value = val ? (val + ' ' + tag) : tag;
             }
         }
 
-        function openMemberModal() {
-            document.getElementById('mName').value = '';
-            document.getElementById('mBirth').value = '';
-            document.getElementById('mBlood').value = '';
-            document.getElementById('mAllergies').value = '';
+        function renderQuickFilterTags() {
+            let tags = getAllTags();
+            let all = [...tags.serious.slice(0, 6), ...tags.funny.slice(0, 4)];
+            document.getElementById('quickFilterTags').innerHTML = all.map(t => 
+                `<span class="chip" onclick="setSearchQuery('${t}')">${t}</span>`
+            ).join('');
+        }
+
+        function renderDocQuickTags() {
+            let tags = ['#аналізи', '#кров', '#рентген', '#УЗД', '#рецепт', '#виписка', ...(appSettings.customTags || [])];
+            document.getElementById('docQuickTags').innerHTML = tags.map(t => 
+                `<span class="chip" onclick="document.getElementById('docSearchQuery').value='${t}'; renderDocumentsArchive();">${t}</span>`
+            ).join('');
+        }
+
+        function setSearchQuery(q) {
+            document.getElementById('searchQuery').value = q;
+            saveSearchQuery(q);
+            renderVisits();
+        }
+
+        /* ==========================================
+           5. SEARCH HISTORY & CUSTOM TAGS
+        ========================================== */
+        function saveSearchQuery(q) {
+            q = q.trim();
+            if (!q || q.length < 2) return;
+            appSettings.searchHistory = [q, ...(appSettings.searchHistory || []).filter(x => x !== q)].slice(0, 8);
+            saveSettings();
+        }
+
+        function showSearchHistory() {
+            let box = document.getElementById('searchHistoryBox');
+            let hist = appSettings.searchHistory || [];
+            if (hist.length === 0) { box.style.display = 'none'; return; }
+            box.innerHTML = `<div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">Останні пошукові запити:</div>` +
+                hist.map(h => `<span class="history-tag" onclick="setSearchQuery('${h}'); document.getElementById('searchHistoryBox').style.display='none';">🕒 ${h}</span>`).join('');
+            box.style.display = 'block';
+            setTimeout(() => {
+                document.addEventListener('click', function hideBox(e) {
+                    if (!e.target.closest('.search-wrapper')) {
+                        box.style.display = 'none';
+                        document.removeEventListener('click', hideBox);
+                    }
+                });
+            }, 100);
+        }
+
+        function clearSearchHistory() {
+            appSettings.searchHistory = [];
+            saveSettings();
+            showToast('Історію пошуку очищено', 'danger');
+        }
+
+        function addCustomTag() {
+            let inp = document.getElementById('newCustomTagInput');
+            let val = inp.value.trim();
+            if (!val) return;
+            if (!val.startsWith('#')) val = '#' + val;
+            if (!appSettings.customTags) appSettings.customTags = [];
+            if (!appSettings.customTags.includes(val)) {
+                appSettings.customTags.push(val);
+                saveSettings();
+                inp.value = '';
+                renderCustomTagsManage();
+                showToast(`Додано хештег ${val}`);
+            }
+        }
+
+        function removeCustomTag(tag) {
+            appSettings.customTags = (appSettings.customTags || []).filter(t => t !== tag);
+            saveSettings();
+            renderCustomTagsManage();
+            showToast(`Хештег ${tag} видалено`, 'danger');
+        }
+
+        function renderCustomTagsManage() {
+            let list = appSettings.customTags || [];
+            let container = document.getElementById('customTagsManageList');
+            if (list.length === 0) {
+                container.innerHTML = '<span style="font-size:0.8rem; color:var(--text-light);">Власних хештегів поки немає</span>';
+            } else {
+                container.innerHTML = list.map(t => `<span class="chip">${t} <b onclick="removeCustomTag('${t}')" style="color:var(--danger); margin-left:4px;">×</b></span>`).join('');
+            }
+        }
+
+        /* ==========================================
+           6. MEMBERS MANAGEMENT & AVATARS
+        ========================================== */
+        function renderEmojiPicker() {
+            let container = document.getElementById('emojiPicker');
+            container.innerHTML = EMOJI_AVATARS.map(em => `
+                <div class="emoji-option ${selectedMemberAvatar === em ? 'selected' : ''}" onclick="selectEmojiAvatar('${em}')">${em}</div>
+            `).join('');
+        }
+
+        function selectEmojiAvatar(em) {
+            selectedMemberAvatar = em;
+            document.getElementById('mAvatarPreview').innerHTML = em;
+            renderEmojiPicker();
+        }
+
+        async function handleMemberPhoto(input) {
+            if (input.files && input.files[0]) {
+                let compressed = await compressImage(input.files[0], 300, 0.8);
+                selectedMemberAvatar = compressed;
+                document.getElementById('mAvatarPreview').innerHTML = `<img src="${compressed}">`;
+                renderEmojiPicker();
+            }
+        }
+
+        function openMemberModal(id = null) {
+            document.getElementById('mEditId').value = id || '';
+            document.getElementById('mPhotoInput').value = '';
+            if (id) {
+                let m = dbData.members.find(x => x.id === id);
+                document.getElementById('memberModalTitle').innerText = '✏️ Редагувати профіль';
+                document.getElementById('mName').value = m.name;
+                document.getElementById('mBirth').value = m.birthDate || '';
+                document.getElementById('mBlood').value = m.bloodGroup || '';
+                document.getElementById('mAllergies').value = m.allergies || '';
+                document.getElementById('mChronic').value = m.chronic || '';
+                selectedMemberAvatar = m.avatar || '👨';
+            } else {
+                document.getElementById('memberModalTitle').innerText = '👤 Новий член родини';
+                document.getElementById('mName').value = '';
+                document.getElementById('mBirth').value = '';
+                document.getElementById('mBlood').value = '';
+                document.getElementById('mAllergies').value = '';
+                document.getElementById('mChronic').value = '';
+                selectedMemberAvatar = '👨';
+            }
+            document.getElementById('mAvatarPreview').innerHTML = selectedMemberAvatar.startsWith('data:image') ? `<img src="${selectedMemberAvatar}">` : selectedMemberAvatar;
+            renderEmojiPicker();
             document.getElementById('memberModal').style.display = 'flex';
         }
 
-        function openVisitModal() {
-            if(db.members.length === 0) {
-                alert('Спочатку додайте хоча б одного члена родини!');
-                return;
-            }
-            let select = document.getElementById('vMemberId');
-            select.innerHTML = db.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-            
-            document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('vDoctor').value = '';
-            document.getElementById('vClinic').value = '';
-            document.getElementById('vReason').value = '';
-            document.getElementById('vDiagnosis').value = '';
-            document.getElementById('vTreatment').value = '';
-            document.getElementById('vFile').value = '';
-            document.getElementById('visitModal').style.display = 'flex';
-        }
-
-        function closeModals() {
-            document.getElementById('memberModal').style.display = 'none';
-            document.getElementById('visitModal').style.display = 'none';
-        }
-
         function saveMember() {
+            let editId = document.getElementById('mEditId').value;
             let name = document.getElementById('mName').value.trim();
-            if(!name) { alert('Введіть ім\'я!'); return; }
+            if (!name) { showToast('Будь ласка, введіть ім\'я!', 'warning'); return; }
             
-            let member = {
-                id: Date.now().toString(),
+            let memberObj = {
+                id: editId || Date.now().toString(),
                 name: name,
                 birthDate: document.getElementById('mBirth').value,
                 bloodGroup: document.getElementById('mBlood').value,
-                allergies: document.getElementById('mAllergies').value
+                allergies: document.getElementById('mAllergies').value,
+                chronic: document.getElementById('mChronic').value,
+                avatar: selectedMemberAvatar
             };
-            db.members.push(member);
-            saveData();
-            closeModals();
-        }
 
-        function saveVisit() {
-            let memberId = document.getElementById('vMemberId').value;
-            let doctor = document.getElementById('vDoctor').value.trim();
-            if(!doctor) { alert('Введіть лікаря!'); return; }
-
-            let fileInput = document.getElementById('vFile');
-            let fileData = null;
-
-            if(fileInput.files && fileInput.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(e) {
-                    finishSaveVisit(memberId, e.target.result);
-                };
-                reader.readAsDataURL(fileInput.files[0]);
+            if (editId) {
+                let idx = dbData.members.findIndex(x => x.id === editId);
+                if (idx !== -1) dbData.members[idx] = memberObj;
+                showToast(`Профіль «${name}» оновлено!`, 'warning');
             } else {
-                finishSaveVisit(memberId, null);
+                dbData.members.push(memberObj);
+                showToast(`Додано члена родини: «${name}»!`);
             }
-        }
-
-        function finishSaveVisit(memberId, fileData) {
-            let visit = {
-                id: Date.now().toString(),
-                memberId: memberId,
-                date: document.getElementById('vDate').value,
-                doctor: document.getElementById('vDoctor').value,
-                clinic: document.getElementById('vClinic').value,
-                reason: document.getElementById('vReason').value,
-                diagnosis: document.getElementById('vDiagnosis').value,
-                treatment: document.getElementById('vTreatment').value,
-                file: fileData
-            };
-            db.visits.push(visit);
-            saveData();
+            saveToIDB();
             closeModals();
         }
 
         function deleteMember(id) {
-            if(confirm('Видалити члена родини та всі його записи?')) {
-                db.members = db.members.filter(m => m.id !== id);
-                db.visits = db.visits.filter(v => v.memberId !== id);
-                saveData();
-            }
+            let m = dbData.members.find(x => x.id === id);
+            askConfirm('Видалити профіль?', `Ви впевнені, що хочете видалити профіль «${m ? m.name : ''}» та всі пов'язані медичні записи?`, () => {
+                dbData.members = dbData.members.filter(x => x.id !== id);
+                dbData.visits = dbData.visits.filter(v => v.memberId !== id);
+                dbData.medications = (dbData.medications || []).filter(med => med.memberId !== id);
+                saveToIDB();
+                showToast('Профіль та записи видалено', 'danger');
+            });
         }
 
-        function deleteVisit(id) {
-            if(confirm('Видалити цей запис?')) {
-                db.visits = db.visits.filter(v => v.id !== id);
-                saveData();
-            }
+        function openEmergencyCard(memberId) {
+            let m = dbData.members.find(x => x.id === memberId);
+            if (!m) return;
+            let memberVisits = dbData.visits.filter(v => v.memberId === memberId).sort((a,b) => new Date(b.date) - new Date(a.date));
+            let recentDiagnoses = memberVisits.slice(0, 4).map(v => `<li><b>${v.date}:</b> ${v.diagnosis || v.doctor} ${v.treatment ? `<i>(${v.treatment})</i>` : ''}</li>`).join('');
+
+            let avatarHtml = (m.avatar && m.avatar.startsWith('data:image')) ? `<img src="${m.avatar}">` : (m.avatar || '👤');
+            let ageStr = calculateAge(m.birthDate);
+
+            document.getElementById('emergencyModalContent').innerHTML = `
+                <div style="text-align:center; margin-bottom:12px;">
+                    <div class="avatar-circle" style="margin:0 auto 8px auto; width:76px; height:76px; font-size:2.5rem;">${avatarHtml}</div>
+                    <h2 style="font-size:1.35rem; color:var(--primary);">${m.name}</h2>
+                    <p style="font-size:1rem; font-weight:bold;">${m.birthDate ? `Дата нар.: ${m.birthDate} (${ageStr})` : 'Вік не вказано'}</p>
+                </div>
+                <div class="card" style="background:var(--danger-light); border-color:var(--danger); margin-bottom:10px;">
+                    <p style="font-size:1rem; color:var(--danger);"><b>🩸 Група крові:</b> ${m.bloodGroup || 'Не вказано'}</p>
+                    <p style="font-size:1rem; color:var(--danger);"><b>⚠️ Алергії на ліки/продукти:</b> ${m.allergies || 'Немає даних'}</p>
+                </div>
+                <div class="card" style="background:var(--bg); margin-bottom:10px;">
+                    <p style="font-size:0.95rem;"><b>📌 Хронічні стани / Особливості:</b><br>${m.chronic || 'Немає записів'}</p>
+                </div>
+                <div class="card" style="background:var(--bg); margin-bottom:14px;">
+                    <p style="font-size:0.95rem;"><b>🕒 Останні звернення та призначення:</b></p>
+                    <ul style="padding-left:18px; font-size:0.88rem; margin-top:6px; line-height:1.5;">
+                        ${recentDiagnoses || '<li>Записів поки немає</li>'}
+                    </ul>
+                </div>
+                <button class="btn" onclick="closeModals()">Закрити картку</button>
+            `;
+            document.getElementById('emergencyModal').style.display = 'flex';
         }
 
-        function renderAll() {
-            // Render Members
-            let mDiv = document.getElementById('members-list');
-            if(db.members.length === 0) {
-                mDiv.innerHTML = '<div class="empty-state">Список членів родини порожній</div>';
+        /* ==========================================
+           7. MEDICATION TRACKER & HOME CABINET
+        ========================================== */
+        function shiftMedDate(days) {
+            let el = document.getElementById('medTrackerDate');
+            let cur = el.value ? new Date(el.value) : new Date();
+            cur.setDate(cur.getDate() + days);
+            el.value = cur.toISOString().split('T')[0];
+            renderMeds();
+        }
+
+        function openMedModal(id = null) {
+            if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
+            let select = document.getElementById('medMemberId');
+            select.innerHTML = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            
+            document.getElementById('medEditId').value = id || '';
+            let checkboxes = document.querySelectorAll('.med-slot-cb');
+
+            if (id) {
+                let med = (dbData.medications || []).find(x => x.id === id);
+                document.getElementById('medModalTitle').innerText = '✏️ Редагувати курс ліків';
+                select.value = med.memberId;
+                document.getElementById('medName').value = med.name;
+                document.getElementById('medDose').value = med.dose || '';
+                document.getElementById('medRule').value = med.rule || 'Після їжі';
+                document.getElementById('medStartDate').value = med.startDate;
+                document.getElementById('medDays').value = med.days || 7;
+                document.getElementById('medNotes').value = med.notes || '';
+                checkboxes.forEach(cb => { cb.checked = (med.slots || []).includes(cb.value); });
             } else {
-                mDiv.innerHTML = db.members.map(m => `
-                    <div class="card">
-                        <h3>👤 ${m.name}</h3>
-                        <p><b>Дата народження:</b> ${m.birthDate || 'не вказано'}</p>
-                        <p><b>Група крові:</b> ${m.bloodGroup || 'не вказано'}</p>
-                        <p><b>Алергії:</b> <span style="color:var(--danger)">${m.allergies || 'немає'}</span></p>
-                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; width: auto;" onclick="deleteMember('${m.id}')">Видалити профіль</button>
-                    </div>
-                `).join('');
+                document.getElementById('medModalTitle').innerText = '💊 Призначити курс ліків';
+                document.getElementById('medName').value = '';
+                document.getElementById('medDose').value = '1 таб.';
+                document.getElementById('medRule').value = 'Після їжі';
+                document.getElementById('medStartDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('medDays').value = 7;
+                document.getElementById('medNotes').value = '';
+                checkboxes.forEach(cb => { cb.checked = (cb.value === '🌅 Ранок' || cb.value === '🌆 Вечір'); });
+            }
+            document.getElementById('medModal').style.display = 'flex';
+        }
+
+        function saveMedCourse() {
+            let name = document.getElementById('medName').value.trim();
+            if (!name) { showToast('Введіть назву препарату!', 'warning'); return; }
+
+            let slots = Array.from(document.querySelectorAll('.med-slot-cb')).filter(cb => cb.checked).map(cb => cb.value);
+            if (slots.length === 0) { showToast('Оберіть хоча б один час прийому!', 'warning'); return; }
+
+            let editId = document.getElementById('medEditId').value;
+            if (!dbData.medications) dbData.medications = [];
+
+            let existingLogs = {};
+            let existingStatus = 'active';
+            if (editId) {
+                let old = dbData.medications.find(x => x.id === editId);
+                if (old) { existingLogs = old.logs || {}; existingStatus = old.status || 'active'; }
             }
 
-            // Render Visits
-            let vDiv = document.getElementById('visits-list');
-            if(db.visits.length === 0) {
-                vDiv.innerHTML = '<div class="empty-state">Поки немає жодного запису про візити</div>';
+            let medObj = {
+                id: editId || Date.now().toString(),
+                memberId: document.getElementById('medMemberId').value,
+                name: name,
+                dose: document.getElementById('medDose').value.trim() || '1 доза',
+                rule: document.getElementById('medRule').value,
+                slots: slots,
+                startDate: document.getElementById('medStartDate').value,
+                days: parseInt(document.getElementById('medDays').value) || 7,
+                notes: document.getElementById('medNotes').value.trim(),
+                status: existingStatus,
+                logs: existingLogs
+            };
+
+            if (editId) {
+                let idx = dbData.medications.findIndex(x => x.id === editId);
+                if (idx !== -1) dbData.medications[idx] = medObj;
+                showToast(`Курс «${name}» оновлено! ✏️`, 'warning');
             } else {
-                // Sort by date desc
-                let sortedVisits = [...db.visits].sort((a,b) => new Date(b.date) - new Date(a.date));
-                vDiv.innerHTML = sortedVisits.map(v => {
-                    let member = db.members.find(m => m.id === v.memberId);
-                    let memberName = member ? member.name : 'Видалений профіль';
+                dbData.medications.push(medObj);
+                showToast(`Курс «${name}» додано в трекер! 💊`);
+            }
+            saveToIDB();
+            closeModals();
+            renderMeds();
+        }
+
+        function toggleMedDose(medId, dateStr, slotName) {
+            let med = (dbData.medications || []).find(x => x.id === medId);
+            if (!med) return;
+            if (!med.logs) med.logs = {};
+            let key = `${dateStr}_${slotName}`;
+            if (med.logs[key]) {
+                delete med.logs[key];
+                showToast(`Відмітку знято (${slotName})`, 'warning');
+            } else {
+                med.logs[key] = true;
+                showToast(`Прийнято: ${med.name} (${slotName}) ✅`);
+            }
+            saveToIDB();
+            renderMeds();
+        }
+
+        function toggleMedCourseStatus(medId) {
+            let med = (dbData.medications || []).find(x => x.id === medId);
+            if (!med) return;
+            med.status = med.status === 'completed' ? 'active' : 'completed';
+            saveToIDB();
+            renderMeds();
+            showToast(med.status === 'completed' ? 'Курс перенесено в архів завершених 🗄' : 'Курс знову активний 🟢');
+        }
+
+        function deleteMedCourse(medId) {
+            askConfirm('Видалити курс ліків?', 'Ви впевнені, що хочете видалити цей препарат та історію його прийому?', () => {
+                dbData.medications = (dbData.medications || []).filter(x => x.id !== medId);
+                saveToIDB();
+                renderMeds();
+                showToast('Курс ліків видалено', 'danger');
+            });
+        }
+
+        function renderMeds() {
+            let selectedDate = document.getElementById('medTrackerDate').value || new Date().toISOString().split('T')[0];
+            let memberFilter = document.getElementById('medFilterMember').value;
+            let statusFilter = document.getElementById('medFilterStatus').value;
+
+            let meds = (dbData.medications || []).filter(med => {
+                let matchMember = !memberFilter || med.memberId === memberFilter;
+                let st = med.status || 'active';
+                return matchMember && st === statusFilter;
+            });
+
+            let container = document.getElementById('meds-list');
+            if (meds.length === 0) {
+                container.innerHTML = `<div class="empty-state">💊 ${statusFilter === 'active' ? 'Активних курсів прийому ліків немає. Натисніть кнопку зверху, щоб додати препарат!' : 'Завершених курсів поки немає.'}</div>`;
+                return;
+            }
+
+            container.innerHTML = meds.map(med => {
+                let member = dbData.members.find(m => m.id === med.memberId);
+                let memberName = member ? member.name : 'Видалений';
+                let start = new Date(med.startDate);
+                let curDate = new Date(selectedDate);
+                let diffDays = Math.floor((curDate - start) / (1000 * 60 * 60 * 24)) + 1;
+                
+                let dayBadge = '';
+                if (diffDays < 1) dayBadge = `<span class="badge">Почнеться ${med.startDate}</span>`;
+                else if (diffDays > med.days) dayBadge = `<span class="badge badge-danger">Курс закінчився (${med.days} дн.)</span>`;
+                else dayBadge = `<span class="badge badge-success">День ${diffDays} з ${med.days}</span>`;
+
+                let totalScheduledDoses = med.days * (med.slots ? med.slots.length : 1);
+                let takenCount = Object.keys(med.logs || {}).length;
+                let progressPct = Math.min(100, Math.round((takenCount / totalScheduledDoses) * 100));
+
+                let dosesHtml = (med.slots || []).map(slot => {
+                    let isTaken = med.logs && med.logs[`${selectedDate}_${slot}`];
                     return `
-                        <div class="card">
-                            <span class="badge">${v.date}</span>
-                            <span class="badge" style="background:#f1f5f9; color:var(--text);">${memberName}</span>
-                            <h3 style="margin-top:8px;">🩺 ${v.doctor}</h3>
-                            <p><b>Клініка:</b> ${v.clinic || 'не вказано'}</p>
-                            <p><b>Скарги:</b> ${v.reason || '—'}</p>
-                            <p><b>Діагноз:</b> <b>${v.diagnosis || '—'}</b></p>
-                            <p><b>Призначення:</b> ${v.treatment || '—'}</p>
-                            ${v.file ? `<div style="margin-top:8px;"><a href="${v.file}" target="_blank"><img src="${v.file}" style="max-width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--border);"></a></div>` : ''}
-                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; width: auto; margin-top: 10px;" onclick="deleteVisit('${v.id}')">Видалити запис</button>
-                        </div>
+                        <button type="button" class="dose-btn ${isTaken ? 'taken' : ''}" onclick="toggleMedDose('${med.id}', '${selectedDate}', '${slot}')">
+                            <span>${isTaken ? '✅' : '⭕'}</span>
+                            <span>${slot}</span>
+                        </button>
                     `;
                 }).join('');
+
+                return `
+                    <div class="card" style="border-left: 5px solid var(--purple);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; margin-bottom:6px;">
+                            <div>
+                                <span class="badge badge-purple">👤 ${memberName}</span>
+                                ${dayBadge}
+                            </div>
+                            <span class="badge" style="background:var(--bg); color:var(--text);">🍽 ${med.rule}</span>
+                        </div>
+
+                        <h3>💊 ${med.name} <span style="font-weight:normal; font-size:0.9rem; color:var(--primary);">(${med.dose})</span></h3>
+                        ${med.notes ? `<p><b>Примітка:</b> ${med.notes}</p>` : ''}
+
+                        <div style="margin-top:8px;">
+                            <div style="font-size:0.75rem; font-weight:700; color:var(--text-light);">ВІДМІТИТИ ПРИЙОМ НА ${selectedDate}:</div>
+                            <div class="dose-grid">${dosesHtml}</div>
+                        </div>
+
+                        <div style="margin-top:12px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-light);">
+                                <span>Загальний прогрес курсу:</span>
+                                <span><b>${takenCount} з ${totalScheduledDoses}</b> прийомів (${progressPct}%)</span>
+                            </div>
+                            <div class="bar-container"><div class="bar-fill" style="width:${progressPct}%; background:var(--success);"></div></div>
+                        </div>
+
+                        <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary btn-sm" onclick="toggleMedCourseStatus('${med.id}')">${med.status === 'completed' ? '🔄 Відновити курс' : '🏁 Завершити курс'}</button>
+                            <button class="btn btn-warning btn-sm" onclick="openMedModal('${med.id}')">✏️ Редагувати</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteMedCourse('${med.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* --- HOME CABINET (ДОМАШНЯ АПТЕЧКА) --- */
+        function getCabinetItemExpiryStatus(expiryMonthStr) {
+            if (!expiryMonthStr) return { status: 'ok', daysLeft: 999, label: 'Термін не вказано' };
+            let parts = expiryMonthStr.split('-');
+            let year = parseInt(parts[0]);
+            let month = parseInt(parts[1]);
+            // Last day of the specified expiry month
+            let expDate = new Date(year, month, 0, 23, 59, 59);
+            let now = new Date();
+            let diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+            if (diffDays < 0) {
+                return { status: 'expired', daysLeft: diffDays, label: `🔴 ПРОСТРОЧЕНО (${expiryMonthStr})` };
+            } else if (diffDays <= 60) {
+                return { status: 'expiring', daysLeft: diffDays, label: `🟡 Скоро виходить: ${expiryMonthStr} (~${diffDays} дн.)` };
+            } else {
+                return { status: 'ok', daysLeft: diffDays, label: `🟢 Придатний до: ${expiryMonthStr}` };
             }
+        }
+
+        function openCabinetModal(id = null) {
+            document.getElementById('cabEditId').value = id || '';
+            if (id) {
+                let item = (dbData.cabinet || []).find(x => x.id === id);
+                document.getElementById('cabModalTitle').innerText = '✏️ Редагувати препарат в аптечці';
+                document.getElementById('cabName').value = item.name;
+                document.getElementById('cabCategory').value = item.category || '🌡 Жарознижувальне / Застуда';
+                document.getElementById('cabExpiry').value = item.expiry || '';
+                document.getElementById('cabQty').value = item.qty || '';
+                document.getElementById('cabLocation').value = item.location || '';
+                document.getElementById('cabNotes').value = item.notes || '';
+            } else {
+                document.getElementById('cabModalTitle').innerText = '🧰 Додати ліки в аптечку';
+                document.getElementById('cabName').value = '';
+                document.getElementById('cabCategory').value = '🌡 Жарознижувальне / Застуда';
+                let nextYear = new Date().getFullYear() + 1;
+                document.getElementById('cabExpiry').value = `${nextYear}-06`;
+                document.getElementById('cabQty').value = '1 упаковка';
+                document.getElementById('cabLocation').value = 'Головна аптечка';
+                document.getElementById('cabNotes').value = '';
+            }
+            document.getElementById('cabinetModal').style.display = 'flex';
+        }
+
+        function saveCabinetItem() {
+            let name = document.getElementById('cabName').value.trim();
+            if (!name) { showToast('Введіть назву препарату!', 'warning'); return; }
+
+            let editId = document.getElementById('cabEditId').value;
+            if (!dbData.cabinet) dbData.cabinet = [];
+
+            let itemObj = {
+                id: editId || Date.now().toString(),
+                name: name,
+                category: document.getElementById('cabCategory').value,
+                expiry: document.getElementById('cabExpiry').value,
+                qty: document.getElementById('cabQty').value.trim(),
+                location: document.getElementById('cabLocation').value.trim(),
+                notes: document.getElementById('cabNotes').value.trim()
+            };
+
+            if (editId) {
+                let idx = dbData.cabinet.findIndex(x => x.id === editId);
+                if (idx !== -1) dbData.cabinet[idx] = itemObj;
+                showToast(`«${name}» оновлено в аптечці! ✏️`, 'warning');
+            } else {
+                dbData.cabinet.push(itemObj);
+                showToast(`«${name}» додано в домашню аптечку! 🧰`);
+            }
+            saveToIDB();
+            closeModals();
+            renderCabinet();
+        }
+
+        function deleteCabinetItem(id) {
+            askConfirm('Списати з аптечки?', 'Видалити цей препарат із домашньої аптечки?', () => {
+                dbData.cabinet = (dbData.cabinet || []).filter(x => x.id !== id);
+                saveToIDB();
+                renderCabinet();
+                showToast('Препарат видалено з аптечки', 'danger');
+            });
+        }
+
+        function renderCabinet() {
+            let items = dbData.cabinet || [];
+            let total = items.length;
+            let expiringCount = 0;
+            let expiredCount = 0;
+
+            items.forEach(it => {
+                let st = getCabinetItemExpiryStatus(it.expiry).status;
+                if (st === 'expiring') expiringCount++;
+                if (st === 'expired') expiredCount++;
+            });
+
+            document.getElementById('cabStatTotal').innerText = total;
+            document.getElementById('cabStatExpiring').innerText = expiringCount;
+            document.getElementById('cabStatExpired').innerText = expiredCount;
+
+            let query = (document.getElementById('cabSearchQuery').value || '').toLowerCase().trim();
+            let catFilter = document.getElementById('cabFilterCat').value;
+            let expFilter = document.getElementById('cabFilterExp').value;
+
+            let filtered = items.filter(it => {
+                let text = `${it.name} ${it.category} ${it.location} ${it.notes}`.toLowerCase();
+                let matchQuery = !query || text.includes(query);
+                let matchCat = !catFilter || it.category === catFilter;
+                let st = getCabinetItemExpiryStatus(it.expiry).status;
+                let matchExp = expFilter === 'all' || st === expFilter;
+                return matchQuery && matchCat && matchExp;
+            });
+
+            // Sort by expiry date ascending (soonest/expired first)
+            filtered.sort((a, b) => (a.expiry || '9999-99').localeCompare(b.expiry || '9999-99'));
+
+            let container = document.getElementById('cabinet-list');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">🧰 У домашній аптечці за цим фільтром нічого не знайдено</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(it => {
+                let expInfo = getCabinetItemExpiryStatus(it.expiry);
+                let borderCol = expInfo.status === 'expired' ? 'var(--danger)' : (expInfo.status === 'expiring' ? 'var(--warning)' : 'var(--teal)');
+                let badgeClass = expInfo.status === 'expired' ? 'badge-danger' : (expInfo.status === 'expiring' ? 'badge-money' : 'badge-success');
+
+                return `
+                    <div class="card" style="border-left: 5px solid ${borderCol};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; margin-bottom:6px;">
+                            <span class="badge">${it.category}</span>
+                            <span class="badge ${badgeClass}">${expInfo.label}</span>
+                        </div>
+                        <h3>💊 ${it.name}</h3>
+                        <p><b>📦 Залишок:</b> ${it.qty || 'не вказано'} | <b>📍 Де лежить:</b> ${it.location || 'Аптечка'}</p>
+                        ${it.notes ? `<p><b>📝 Від чого / Дозування:</b> ${it.notes}</p>` : ''}
+                        <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; display:flex; gap:6px;">
+                            <button class="btn btn-warning btn-sm" onclick="openCabinetModal('${it.id}')">✏️ Редагувати</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteCabinetItem('${it.id}')">🗑️ Списати / Викинути</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* ==========================================
+           8. VISITS, HOME ILLNESSES, MEDIA & AUDIO
+        ========================================== */
+        function openVisitModal(id = null) {
+            if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
+            let select = document.getElementById('vMemberId');
+            select.innerHTML = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            
+            document.getElementById('vEditId').value = id || '';
+            currentVisitMedia = [];
+            currentVisitAudio = [];
+            document.getElementById('vMediaFilePicker').value = '';
+            document.getElementById('vAudioFiles').value = '';
+            renderTagChipsForInput('vTagChips', 'vTags');
+
+            if (id) {
+                let v = dbData.visits.find(x => x.id === id);
+                document.getElementById('visitModalTitle').innerText = '✏️ Редагувати візит до лікаря';
+                select.value = v.memberId;
+                document.getElementById('vDate').value = v.date;
+                document.getElementById('vDoctor').value = v.doctor || '';
+                document.getElementById('vClinic').value = v.clinic || '';
+                document.getElementById('vReason').value = v.reason || '';
+                document.getElementById('vDiagnosis').value = v.diagnosis || '';
+                document.getElementById('vTreatment').value = v.treatment || '';
+                document.getElementById('vCostDoctor').value = v.costDoctor || '';
+                document.getElementById('vCostMeds').value = v.costMeds || '';
+                document.getElementById('vTags').value = v.tags || '';
+                currentVisitMedia = v.media ? JSON.parse(JSON.stringify(v.media)) : [];
+                currentVisitAudio = v.audio ? JSON.parse(JSON.stringify(v.audio)) : [];
+            } else {
+                document.getElementById('visitModalTitle').innerText = '🩺 Новий візит до лікаря';
+                document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('vDoctor').value = '';
+                document.getElementById('vClinic').value = '';
+                document.getElementById('vReason').value = '';
+                document.getElementById('vDiagnosis').value = '';
+                document.getElementById('vTreatment').value = '';
+                document.getElementById('vCostDoctor').value = '';
+                document.getElementById('vCostMeds').value = '';
+                document.getElementById('vTags').value = '';
+            }
+            renderMediaItemsList('vMediaItemsList');
+            renderVisitAudioPreview();
+            document.getElementById('visitModal').style.display = 'flex';
+        }
+
+        function openHomeIllnessModal(id = null) {
+            if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
+            let select = document.getElementById('hMemberId');
+            select.innerHTML = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            
+            document.getElementById('hEditId').value = id || '';
+            currentVisitMedia = [];
+            document.getElementById('hMediaFilePicker').value = '';
+            renderTagChipsForInput('hTagChips', 'hTags');
+
+            if (id) {
+                let v = dbData.visits.find(x => x.id === id);
+                document.getElementById('hModalTitle').innerText = '✏️ Редагувати домашню недугу';
+                select.value = v.memberId;
+                document.getElementById('hDate').value = v.date;
+                document.getElementById('hDiagnosis').value = v.diagnosis || '';
+                document.getElementById('hReason').value = v.reason || '';
+                document.getElementById('hTreatment').value = v.treatment || '';
+                document.getElementById('hCostMeds').value = v.costMeds || '';
+                document.getElementById('hTags').value = v.tags || '';
+                currentVisitMedia = v.media ? JSON.parse(JSON.stringify(v.media)) : [];
+            } else {
+                document.getElementById('hModalTitle').innerText = '🏠 Нова домашня недуга';
+                document.getElementById('hDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('hDiagnosis').value = '';
+                document.getElementById('hReason').value = '';
+                document.getElementById('hTreatment').value = '';
+                document.getElementById('hCostMeds').value = '';
+                document.getElementById('hTags').value = '#самолікування';
+            }
+            renderMediaItemsList('hMediaItemsList');
+            document.getElementById('homeIllnessModal').style.display = 'flex';
+        }
+
+        async function addNewMediaItem(input, containerId) {
+            if (!input.files || input.files.length === 0) return;
+            for (let file of Array.from(input.files)) {
+                if (file.type.startsWith('image/')) {
+                    let compressed = await compressImage(file, 1400, 0.8);
+                    currentVisitMedia.push({
+                        type: 'image',
+                        data: compressed,
+                        title: file.name.replace(/\.[^/.]+$/, "").substring(0, 28),
+                        tags: '#аналізи'
+                    });
+                } else {
+                    let reader = new FileReader();
+                    await new Promise((res) => {
+                        reader.onload = function(evt) {
+                            let fType = file.type.startsWith('video') ? 'video' : (file.type === 'application/pdf' ? 'pdf' : 'image');
+                            currentVisitMedia.push({
+                                type: fType,
+                                data: evt.target.result,
+                                title: file.name.substring(0, 28),
+                                tags: fType === 'pdf' ? '#аналізи #виписка' : '#відео'
+                            });
+                            res();
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+            renderMediaItemsList(containerId);
+            input.value = '';
+            showToast('Файл(и) прикріплено!');
+        }
+
+        function renderMediaItemsList(containerId) {
+            let container = document.getElementById(containerId);
+            let tagsList = ['#аналізи', '#рентген', '#УЗД', '#кров', '#рецепт', '#виписка'];
+            container.innerHTML = currentVisitMedia.map((m, idx) => `
+                <div class="media-card">
+                    <div class="thumb-box" onclick='openMediaViewer(${JSON.stringify(m)})'>
+                        ${m.type === 'video' ? `<video class="thumb" src="${m.data}"></video><span style="position:absolute;">▶</span>` : 
+                          (m.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${m.data}" class="thumb">`)}
+                    </div>
+                    <div style="flex:1;">
+                        <input type="text" value="${m.title || ''}" placeholder="Назва документа (напр. Рентген)" oninput="currentVisitMedia[${idx}].title = this.value" style="margin:2px 0; padding:6px; font-size:0.82rem;">
+                        <input type="text" id="mediaTag_${containerId}_${idx}" value="${m.tags || ''}" placeholder="#хештеги" oninput="currentVisitMedia[${idx}].tags = this.value" style="margin:2px 0; padding:6px; font-size:0.82rem;">
+                        <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:3px;">
+                            ${tagsList.map(t => `<span style="font-size:0.68rem; background:var(--card-bg); border:1px solid var(--border); padding:1px 6px; border-radius:10px; cursor:pointer;" onclick="addTagToMediaItem(${idx}, '${t}', '${containerId}')">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    <button type="button" onclick="currentVisitMedia.splice(${idx},1); renderMediaItemsList('${containerId}');" style="background:var(--danger); color:white; border:none; border-radius:50%; width:26px; height:26px; font-weight:bold; cursor:pointer;">×</button>
+                </div>
+            `).join('');
+        }
+
+        function addTagToMediaItem(idx, tag, containerId) {
+            let cur = currentVisitMedia[idx].tags || '';
+            if (!cur.includes(tag)) {
+                currentVisitMedia[idx].tags = cur ? (cur + ' ' + tag) : tag;
+                renderMediaItemsList(containerId);
+            }
+        }
+
+        document.getElementById('vAudioFiles').addEventListener('change', function(e) {
+            if (!e.target.files) return;
+            Array.from(e.target.files).forEach(file => {
+                let reader = new FileReader();
+                reader.onload = function(evt) {
+                    currentVisitAudio.push({ name: file.name || 'Аудіозапис прийому', data: evt.target.result });
+                    renderVisitAudioPreview();
+                    showToast('Аудіозапис додано 🎙');
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        async function toggleVoiceRecording() {
+            let btn = document.getElementById('recordAudioBtn');
+            let status = document.getElementById('recordingStatus');
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                btn.innerHTML = '🔴 Записати на диктофон';
+                btn.className = 'btn btn-purple btn-sm';
+                status.style.display = 'none';
+                return;
+            }
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    let blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    let reader = new FileReader();
+                    reader.onload = function(evt) {
+                        let timeStr = new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+                        currentVisitAudio.push({ name: `Диктофон (${timeStr})`, data: evt.target.result });
+                        renderVisitAudioPreview();
+                        showToast('Запис диктофона збережено! 🎙');
+                    };
+                    reader.readAsDataURL(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                mediaRecorder.start();
+                btn.innerHTML = '⏹ Зупинити запис';
+                btn.className = 'btn btn-danger btn-sm';
+                status.style.display = 'block';
+            } catch (err) {
+                showToast('Немає доступу до мікрофона або скористайтеся кнопкою «Вибрати аудіофайл»', 'warning');
+            }
+        }
+
+        function renderVisitAudioPreview() {
+            document.getElementById('vAudioPreview').innerHTML = currentVisitAudio.map((a, idx) => `
+                <div class="audio-item">
+                    <span style="font-size:0.8rem; font-weight:600;">🎙 ${a.name}</span>
+                    <audio controls src="${a.data}"></audio>
+                    <button type="button" onclick="currentVisitAudio.splice(${idx},1); renderVisitAudioPreview();" style="background:var(--danger); color:white; border:none; border-radius:6px; padding:4px 8px; font-size:0.75rem; cursor:pointer;">×</button>
+                </div>
+            `).join('');
+        }
+
+        function saveVisit() {
+            let doctor = document.getElementById('vDoctor').value.trim();
+            let diagnosis = document.getElementById('vDiagnosis').value.trim();
+            if (!doctor && !diagnosis) { showToast('Вкажіть лікаря або діагноз!', 'warning'); return; }
+
+            let editId = document.getElementById('vEditId').value;
+            let record = {
+                id: editId || Date.now().toString(),
+                type: 'doctor',
+                memberId: document.getElementById('vMemberId').value,
+                date: document.getElementById('vDate').value,
+                doctor: doctor || 'Консультація / Обстеження',
+                clinic: document.getElementById('vClinic').value.trim(),
+                reason: document.getElementById('vReason').value.trim(),
+                diagnosis: diagnosis,
+                treatment: document.getElementById('vTreatment').value.trim(),
+                costDoctor: parseFloat(document.getElementById('vCostDoctor').value) || 0,
+                costMeds: parseFloat(document.getElementById('vCostMeds').value) || 0,
+                tags: document.getElementById('vTags').value.trim(),
+                media: currentVisitMedia,
+                audio: currentVisitAudio
+            };
+
+            if (editId) {
+                let idx = dbData.visits.findIndex(x => x.id === editId);
+                if (idx !== -1) dbData.visits[idx] = record;
+                showToast('Запис про візит відредаговано! ✏️', 'warning');
+            } else {
+                dbData.visits.push(record);
+                showToast('Візит до лікаря успішно додано! ✅');
+            }
+            saveToIDB();
+            closeModals();
+        }
+
+        function saveHomeIllness() {
+            let diagnosis = document.getElementById('hDiagnosis').value.trim();
+            if (!diagnosis) { showToast('Вкажіть, що сталося (стан або симптоми)!', 'warning'); return; }
+
+            let editId = document.getElementById('hEditId').value;
+            let record = {
+                id: editId || Date.now().toString(),
+                type: 'home',
+                memberId: document.getElementById('hMemberId').value,
+                date: document.getElementById('hDate').value,
+                doctor: 'Домашнє лікування',
+                clinic: 'Вдома',
+                reason: document.getElementById('hReason').value.trim() || 'Домашня недуга',
+                diagnosis: diagnosis,
+                treatment: document.getElementById('hTreatment').value.trim(),
+                costDoctor: 0,
+                costMeds: parseFloat(document.getElementById('hCostMeds').value) || 0,
+                tags: document.getElementById('hTags').value.trim(),
+                media: currentVisitMedia,
+                audio: []
+            };
+
+            if (editId) {
+                let idx = dbData.visits.findIndex(x => x.id === editId);
+                if (idx !== -1) dbData.visits[idx] = record;
+                showToast('Домашній запис оновлено! ✏️', 'warning');
+            } else {
+                dbData.visits.push(record);
+                showToast('Домашню недугу додано в історію! 🏠');
+            }
+            saveToIDB();
+            closeModals();
+        }
+
+        function deleteRecord(id) {
+            askConfirm('Видалити медичний запис?', 'Цю дію неможливо скасувати. Усі прикріплені до цього візиту фото та аудіо також будуть видалені.', () => {
+                dbData.visits = dbData.visits.filter(v => v.id !== id);
+                saveToIDB();
+                showToast('Запис видалено з бази', 'danger');
+            });
+        }
+
+        /* ==========================================
+           9. RENDERING ALL VIEWS & ANALYTICS
+        ========================================== */
+        function updateDropdowns() {
+            let memberOptions = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            
+            ['filterMember', 'medFilterMember', 'docFilterMember', 'analyticsMember'].forEach(selId => {
+                let el = document.getElementById(selId);
+                if (!el) return;
+                let cur = el.value;
+                el.innerHTML = `<option value="">Усі члени родини</option>` + memberOptions;
+                el.value = cur;
+            });
+
+            let tlEl = document.getElementById('timelineMemberSelect');
+            let curTl = tlEl.value;
+            tlEl.innerHTML = memberOptions;
+            if (curTl && dbData.members.some(m => m.id === curTl)) tlEl.value = curTl;
+        }
+
+        function renderMembers() {
+            let mDiv = document.getElementById('members-list');
+            if (dbData.members.length === 0) {
+                mDiv.innerHTML = '<div class="empty-state">👨‍👩‍👧‍👦 Додайте першого члена родини, щоб почати вести медичну історію</div>';
+                return;
+            }
+            mDiv.innerHTML = dbData.members.map(m => {
+                let avatarHtml = (m.avatar && m.avatar.startsWith('data:image')) ? `<img src="${m.avatar}">` : (m.avatar || '👤');
+                let ageStr = calculateAge(m.birthDate);
+                let visitsCount = dbData.visits.filter(v => v.memberId === m.id).length;
+                let activeMedsCount = (dbData.medications || []).filter(med => med.memberId === m.id && (med.status || 'active') === 'active').length;
+                let totalSpent = dbData.visits.filter(v => v.memberId === m.id).reduce((sum, v) => sum + (Number(v.costDoctor)||0) + (Number(v.costMeds)||0), 0);
+
+                return `
+                    <div class="card">
+                        <div class="member-header">
+                            <div class="avatar-circle">${avatarHtml}</div>
+                            <div style="flex:1;">
+                                <h3>${m.name} ${ageStr ? `<span class="badge">${ageStr}</span>` : ''}</h3>
+                                <p><b>Дата народження:</b> ${m.birthDate || 'не вказано'} | <b>Група крові:</b> <span style="color:var(--primary); font-weight:bold;">${m.bloodGroup || '—'}</span></p>
+                                <span class="badge badge-purple">Записів: ${visitsCount}</span>
+                                ${activeMedsCount > 0 ? `<span class="badge badge-success" onclick="switchTab('meds')" style="cursor:pointer;">💊 П'є ліків: ${activeMedsCount}</span>` : ''}
+                                ${totalSpent > 0 ? `<span class="badge badge-money">Витрачено: ${totalSpent.toLocaleString()} ₴</span>` : ''}
+                            </div>
+                        </div>
+                        <p><b>⚠️ Алергії:</b> <span style="color:var(--danger); font-weight:600;">${m.allergies || 'немає'}</span></p>
+                        ${m.chronic ? `<p><b>📌 Хронічні / Примітки:</b> ${m.chronic}</p>` : ''}
+                        <div style="margin-top: 12px; display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:10px;">
+                            <button class="btn btn-sm" style="background:var(--primary);" onclick="openEmergencyCard('${m.id}')">🆘 Картка для лікаря</button>
+                            <button class="btn btn-warning btn-sm" onclick="openMemberModal('${m.id}')">✏️ Редагувати</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderVisits() {
+            let query = document.getElementById('searchQuery').value.toLowerCase().trim();
+            let memberFilter = document.getElementById('filterMember').value;
+            let typeFilter = document.getElementById('filterType').value;
+            let sortOrder = document.getElementById('sortOrder').value;
+
+            let filtered = dbData.visits.filter(v => {
+                let member = dbData.members.find(m => m.id === v.memberId);
+                let memberName = member ? member.name.toLowerCase() : '';
+                let mediaText = (v.media || []).map(m => (m.title + ' ' + m.tags)).join(' ').toLowerCase();
+                let fullText = `${v.doctor} ${v.clinic} ${v.diagnosis} ${v.reason} ${v.treatment} ${v.tags || ''} ${mediaText} ${memberName}`.toLowerCase();
+                
+                let matchQuery = !query || fullText.includes(query);
+                let matchMember = !memberFilter || v.memberId === memberFilter;
+                let matchType = !typeFilter || (typeFilter === 'home' ? v.type === 'home' : v.type !== 'home');
+                return matchQuery && matchMember && matchType;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortOrder === 'cost_desc') {
+                    let costA = (Number(a.costDoctor)||0) + (Number(a.costMeds)||0);
+                    let costB = (Number(b.costDoctor)||0) + (Number(b.costMeds)||0);
+                    return costB - costA;
+                }
+                let dateA = new Date(a.date), dateB = new Date(b.date);
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+            });
+
+            let vDiv = document.getElementById('visits-list');
+            if (filtered.length === 0) {
+                vDiv.innerHTML = '<div class="empty-state">🔍 Записів не знайдено</div>';
+                return;
+            }
+
+            vDiv.innerHTML = filtered.map(v => {
+                let member = dbData.members.find(m => m.id === v.memberId);
+                let memberName = member ? member.name : 'Видалений';
+                let isHome = v.type === 'home';
+                let mediaList = v.media || [];
+                let audioList = v.audio || [];
+                let costDoc = Number(v.costDoctor) || 0;
+                let costMeds = Number(v.costMeds) || 0;
+                let totalCost = costDoc + costMeds;
+
+                return `
+                    <div class="card" style="border-left: 5px solid ${isHome ? 'var(--teal)' : 'var(--primary)'};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; margin-bottom:6px;">
+                            <div>
+                                <span class="badge">${v.date}</span>
+                                <span class="badge badge-purple">👤 ${memberName}</span>
+                                <span class="badge ${isHome ? 'badge-home' : ''}">${isHome ? '🏠 Вдома' : '🩺 Лікар'}</span>
+                            </div>
+                            ${totalCost > 0 ? `<span class="badge badge-money">💰 ${totalCost} ₴ (Лікар: ${costDoc} | Ліки: ${costMeds})</span>` : ''}
+                        </div>
+
+                        <h3>${isHome ? '🏠 ' : '🩺 '}${v.diagnosis || v.doctor}</h3>
+                        ${!isHome ? `<p><b>Спеціаліст та клініка:</b> ${v.doctor} ${v.clinic ? `(${v.clinic})` : ''}</p>` : ''}
+                        ${v.reason ? `<p><b>Симптоми / Причина:</b> ${v.reason}</p>` : ''}
+                        ${v.treatment ? `<p><b>💊 Лікування:</b> ${v.treatment}</p>` : ''}
+                        
+                        ${v.tags ? `<div style="margin-top:6px;">${v.tags.split(' ').filter(Boolean).map(t => `<span class="chip" style="padding:2px 8px; font-size:0.72rem;" onclick="setSearchQuery('${t}')">${t}</span>`).join(' ')}</div>` : ''}
+
+                        ${mediaList.length > 0 ? `
+                            <div style="margin-top:10px;">
+                                ${mediaList.map(m => `
+                                    <div style="font-size:0.82rem; background:var(--bg); padding:6px 10px; border-radius:8px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer;" onclick='openMediaViewer(${JSON.stringify(m)})'>
+                                        <span style="color:var(--primary); font-weight:600;">${m.type === 'pdf' ? '📄' : (m.type === 'video' ? '🎬' : '🖼️')} ${m.title || 'Документ'}</span>
+                                        <span style="font-size:0.72rem; color:var(--text-light);">${m.tags || ''} 🔍</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${audioList.length > 0 ? `
+                            <div style="margin-top: 8px;">
+                                ${audioList.map(a => `<div class="audio-item"><span style="font-size:0.78rem; font-weight:600;">🎙 ${a.name}</span><audio controls src="${a.data}"></audio></div>`).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; display:flex; gap:6px;">
+                            <button class="btn btn-warning btn-sm" onclick="${isHome ? `openHomeIllnessModal('${v.id}')` : `openVisitModal('${v.id}')`}">✏️ Редагувати</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${v.id}')">🗑️ Видалити</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDocumentsArchive() {
+            let query = document.getElementById('docSearchQuery').value.toLowerCase().trim();
+            let memberFilter = document.getElementById('docFilterMember').value;
+
+            let allDocs = [];
+            dbData.visits.forEach(v => {
+                let member = dbData.members.find(m => m.id === v.memberId);
+                let memberName = member ? member.name : 'Видалений';
+                if (v.media && Array.isArray(v.media)) {
+                    v.media.forEach(m => {
+                        allDocs.push({
+                            date: v.date,
+                            memberId: v.memberId,
+                            memberName: memberName,
+                            diagnosis: v.diagnosis || v.doctor,
+                            visitTags: v.tags || '',
+                            media: m
+                        });
+                    });
+                }
+            });
+
+            let filtered = allDocs.filter(d => {
+                let matchMember = !memberFilter || d.memberId === memberFilter;
+                let text = `${d.media.title} ${d.media.tags} ${d.visitTags} ${d.diagnosis} ${d.memberName}`.toLowerCase();
+                return matchMember && (!query || text.includes(query));
+            });
+
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let container = document.getElementById('documents-archive-list');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">📁 Прикріплених документів чи фото за цим запитом немає</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(d => `
+                <div class="card" style="display:flex; gap:12px; align-items:center;">
+                    <div class="thumb-box" onclick='openMediaViewer(${JSON.stringify(d.media)})'>
+                        ${d.media.type === 'video' ? `<video class="thumb" src="${d.media.data}"></video>` : 
+                          (d.media.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${d.media.data}" class="thumb">`)}
+                    </div>
+                    <div style="flex:1;">
+                        <span class="badge">${d.date}</span>
+                        <span class="badge badge-purple">${d.memberName}</span>
+                        <h3 style="font-size:0.95rem; margin-top:4px; cursor:pointer; color:var(--primary);" onclick='openMediaViewer(${JSON.stringify(d.media)})'>${d.media.title || 'Документ'}</h3>
+                        <p style="font-size:0.8rem;">Подія: <b>${d.diagnosis}</b></p>
+                        <div>${(d.media.tags || '').split(' ').filter(Boolean).map(t => `<span class="badge" style="background:var(--bg); color:var(--text-light);">${t}</span>`).join('')}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTimeline() {
+            let memberId = document.getElementById('timelineMemberSelect').value;
+            let container = document.getElementById('timeline-content');
+            if (!memberId) { container.innerHTML = '<div class="empty-state">Оберіть члена родини</div>'; return; }
+
+            let records = dbData.visits.filter(v => v.memberId === memberId).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (records.length === 0) { container.innerHTML = '<div class="empty-state">Записів для цього члена родини поки немає</div>'; return; }
+
+            container.innerHTML = `<div class="timeline-container">` + records.map(v => {
+                let isHome = v.type === 'home';
+                let totalCost = (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                return `
+                    <div class="timeline-item ${isHome ? 'home-event' : ''}">
+                        <div class="card" style="margin-bottom:0;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span class="badge">${v.date}</span>
+                                ${totalCost > 0 ? `<span class="badge badge-money">${totalCost} ₴</span>` : ''}
+                            </div>
+                            <h3 style="margin-top:6px;">${isHome ? '🏠 ' : '🩺 '}${v.diagnosis || v.doctor}</h3>
+                            ${!isHome ? `<p><b>Лікар:</b> ${v.doctor}</p>` : ''}
+                            ${v.treatment ? `<p><b>Лікування:</b> ${v.treatment}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('') + `</div>`;
+        }
+
+        function renderAnalytics() {
+            let memberFilter = document.getElementById('analyticsMember').value;
+            let periodFilter = document.getElementById('analyticsPeriod').value;
+            let queryFilter = document.getElementById('analyticsQuery').value.toLowerCase().trim();
+            let now = new Date();
+
+            let filtered = dbData.visits.filter(v => {
+                if (memberFilter && v.memberId !== memberFilter) return false;
+                if (periodFilter === 'year_current') {
+                    if (new Date(v.date).getFullYear() !== now.getFullYear()) return false;
+                } else if (periodFilter !== 'all') {
+                    let days = parseInt(periodFilter);
+                    if ((now - new Date(v.date)) / (1000 * 60 * 60 * 24) > days) return false;
+                }
+                if (queryFilter) {
+                    let text = `${v.doctor} ${v.diagnosis} ${v.reason} ${v.treatment} ${v.tags || ''}`.toLowerCase();
+                    if (!text.includes(queryFilter)) return false;
+                }
+                return true;
+            });
+
+            let totalDocSpent = filtered.reduce((s, v) => s + (Number(v.costDoctor)||0), 0);
+            let totalMedsSpent = filtered.reduce((s, v) => s + (Number(v.costMeds)||0), 0);
+            let totalSpent = totalDocSpent + totalMedsSpent;
+            let docCount = filtered.filter(v => v.type !== 'home').length;
+            let homeCount = filtered.filter(v => v.type === 'home').length;
+
+            document.getElementById('anTotalSpent').innerText = totalSpent.toLocaleString() + ' ₴';
+            document.getElementById('anDoctorSpent').innerText = totalDocSpent.toLocaleString() + ' ₴';
+            document.getElementById('anMedsSpent').innerText = totalMedsSpent.toLocaleString() + ' ₴';
+            document.getElementById('anTotalEvents').innerText = `${filtered.length} (${docCount} / ${homeCount})`;
+
+            let memberStats = {};
+            dbData.members.forEach(m => { memberStats[m.id] = { name: m.name, spent: 0, count: 0 }; });
+            filtered.forEach(v => {
+                if (memberStats[v.memberId]) {
+                    memberStats[v.memberId].spent += (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                    memberStats[v.memberId].count += 1;
+                }
+            });
+            let sortedMembers = Object.values(memberStats).filter(x => x.count > 0 || x.spent > 0).sort((a,b) => b.spent - a.spent);
+            let maxMemSpent = sortedMembers.length > 0 ? Math.max(...sortedMembers.map(x => x.spent), 1) : 1;
+            document.getElementById('analyticsMembersBars').innerHTML = sortedMembers.length === 0 ? '<p>Немає даних</p>' :
+                sortedMembers.map(m => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span><b>👤 ${m.name}</b> (${m.count} зап.)</span>
+                            <span><b>${m.spent.toLocaleString()} ₴</b></span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((m.spent/maxMemSpent)*100)}%; background:var(--purple);"></div></div>
+                    </div>
+                `).join('');
+
+            let diagCosts = {};
+            let diagFreq = {};
+            filtered.forEach(v => {
+                let d = (v.diagnosis || v.doctor || 'Інше').trim();
+                let c = (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                diagCosts[d] = (diagCosts[d] || 0) + c;
+                diagFreq[d] = (diagFreq[d] || 0) + 1;
+            });
+
+            let sortedCostDiags = Object.entries(diagCosts).filter(x => x[1] > 0).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let maxDiagCost = sortedCostDiags.length > 0 ? sortedCostDiags[0][1] : 1;
+            document.getElementById('analyticsCostDiagnosesBars').innerHTML = sortedCostDiags.length === 0 ? '<p>Немає даних про витрати</p>' :
+                sortedCostDiags.map(([d, cost]) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span><b>${d}</b></span>
+                            <span style="color:#d97706; font-weight:bold;">${cost.toLocaleString()} ₴</span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((cost/maxDiagCost)*100)}%; background:var(--warning);"></div></div>
+                    </div>
+                `).join('');
+
+            let sortedFreqDiags = Object.entries(diagFreq).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let maxFreq = sortedFreqDiags.length > 0 ? sortedFreqDiags[0][1] : 1;
+            document.getElementById('analyticsFreqDiagnosesBars').innerHTML = sortedFreqDiags.length === 0 ? '<p>Немає даних</p>' :
+                sortedFreqDiags.map(([d, count]) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span><b>${d}</b></span>
+                            <span>${count} раз(и)</span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((count/maxFreq)*100)}%;"></div></div>
+                    </div>
+                `).join('');
+
+            let months = {};
+            filtered.forEach(v => {
+                if (v.date) {
+                    let mKey = v.date.substring(0, 7);
+                    if (!months[mKey]) months[mKey] = { count: 0, spent: 0 };
+                    months[mKey].count += 1;
+                    months[mKey].spent += (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                }
+            });
+            let sortedMonths = Object.entries(months).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 6);
+            let maxMSpent = sortedMonths.length > 0 ? Math.max(...sortedMonths.map(x => x[1].spent), 1) : 1;
+            document.getElementById('analyticsMonthlyBars').innerHTML = sortedMonths.length === 0 ? '<p>Немає записів</p>' :
+                sortedMonths.map(([m, obj]) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span>📅 <b>${m}</b> (${obj.count} подій)</span>
+                            <span><b>${obj.spent.toLocaleString()} ₴</b></span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((obj.spent/maxMSpent)*100)}%; background:var(--teal);"></div></div>
+                    </div>
+                `).join('');
+        }
+
+        /* ==========================================
+           10. CLOUD BACKUP, SCHEDULE & GOOGLE DRIVE
+        ========================================== */
+        function buildBackupPayload() {
+            return JSON.stringify({
+                version: 4,
+                exportedAt: new Date().toISOString(),
+                members: dbData.members,
+                visits: dbData.visits,
+                medications: dbData.medications || [],
+                cabinet: dbData.cabinet || [],
+                settings: appSettings
+            });
+        }
+
+        function markBackupCompleted() {
+            appSettings.lastBackupTimestamp = Date.now();
+            saveSettings();
+            updateBackupSettingsUI();
+        }
+
+        function saveBackupInterval(daysVal) {
+            appSettings.backupIntervalDays = parseInt(daysVal) || 0;
+            saveSettings();
+            showToast('Інтервал резервного копіювання збережено! ⏰');
+        }
+
+        function saveGDriveToken(token) {
+            appSettings.gdriveToken = token.trim();
+            saveSettings();
+        }
+
+        function updateBackupSettingsUI() {
+            let sel = document.getElementById('backupIntervalSelect');
+            if (sel) sel.value = (appSettings.backupIntervalDays !== undefined ? appSettings.backupIntervalDays : 7).toString();
+            
+            let tokInput = document.getElementById('gdriveAccessToken');
+            if (tokInput) tokInput.value = appSettings.gdriveToken || '';
+
+            let infoEl = document.getElementById('lastBackupInfo');
+            if (infoEl) {
+                if (appSettings.lastBackupTimestamp) {
+                    let d = new Date(appSettings.lastBackupTimestamp);
+                    infoEl.innerText = `✅ Останній бекап: ${d.toLocaleDateString('uk-UA')} о ${d.toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'})}`;
+                } else {
+                    infoEl.innerText = '⚠️ Резервне копіювання ще не виконувалося';
+                }
+            }
+        }
+
+        function checkBackupSchedule() {
+            let banner = document.getElementById('backupDueBanner');
+            let intervalDays = parseInt(appSettings.backupIntervalDays) || 0;
+            if (intervalDays <= 0) {
+                banner.style.display = 'none';
+                return;
+            }
+            let totalRecords = dbData.members.length + dbData.visits.length + (dbData.cabinet ? dbData.cabinet.length : 0);
+            if (totalRecords === 0) {
+                banner.style.display = 'none';
+                return;
+            }
+            if (!appSettings.lastBackupTimestamp) {
+                banner.style.display = 'flex';
+                return;
+            }
+            let diffDays = (Date.now() - appSettings.lastBackupTimestamp) / (1000 * 60 * 60 * 24);
+            banner.style.display = diffDays >= intervalDays ? 'flex' : 'none';
+        }
+
+        // Native Web Share API -> Directly sends file to Google Drive app on Android!
+        async function shareBackupToCloud() {
+            let jsonStr = buildBackupPayload();
+            let fileName = `FamilyMed_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            let file = new File([jsonStr], fileName, { type: 'application/json' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: 'Резервна копія Сімейна Медкартка PRO',
+                        text: 'Файл бази даних для збереження на Google Диск',
+                        files: [file]
+                    });
+                    markBackupCompleted();
+                    showToast('Відправлено у хмару / Google Диск! ☁️');
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                }
+            }
+            // Fallback to local download if Web Share is not supported on PC browser
+            exportData();
         }
 
         function exportData() {
-            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-            let downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "family_med_backup.json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            let jsonStr = buildBackupPayload();
+            let blob = new Blob([jsonStr], { type: 'application/json' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `FamilyMed_PRO_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            markBackupCompleted();
+            showToast('Резервну копію збережено в телефон! 📱');
+        }
+
+        async function uploadDirectToGoogleDrive() {
+            let token = (appSettings.gdriveToken || '').trim();
+            if (!token) {
+                showToast('Спочатку введіть OAuth2 Access Token або скористайтеся кнопкою «Надіслати на Google Диск»!', 'warning');
+                return;
+            }
+            try {
+                showToast('Завантаження на Google Диск...');
+                let fileName = `FamilyMed_PRO_Backup_${new Date().toISOString().split('T')[0]}.json`;
+                let metadata = { name: fileName, mimeType: 'application/json' };
+                let form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                form.append('file', new Blob([buildBackupPayload()], { type: 'application/json' }));
+
+                let res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: form
+                });
+
+                if (res.ok) {
+                    markBackupCompleted();
+                    showToast('Успішно завантажено напряму в Google Диск! ☁️');
+                } else {
+                    showToast('Помилка авторизації токена. Використайте кнопку «Надіслати на Google Диск»', 'danger');
+                }
+            } catch (e) {
+                showToast('Помилка мережі при з\'єднанні з Google Drive', 'danger');
+            }
         }
 
         function importData(event) {
             let file = event.target.files[0];
-            if(!file) return;
+            if (!file) return;
             let reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     let imported = JSON.parse(e.target.result);
-                    if(imported.members && imported.visits) {
-                        db = imported;
-                        saveData();
-                        alert('Дані успішно відновлено!');
+                    if (imported.members && imported.visits) {
+                        dbData.members = imported.members;
+                        dbData.visits = imported.visits;
+                        dbData.medications = imported.medications || [];
+                        dbData.cabinet = imported.cabinet || [];
+                        if (imported.settings) {
+                            appSettings = { ...appSettings, ...imported.settings };
+                            saveSettings();
+                            applyTheme();
+                        }
+                        saveToIDB();
+                        showToast('Базу даних (включно з аптечкою) успішно відновлено! 🎉');
                     } else {
-                        alert('Невірний формат файлу резервної копії.');
+                        showToast('Невірний формат файлу резервної копії', 'danger');
                     }
-                } catch(err) {
-                    alert('Помилка читання файлу.');
+                } catch (err) {
+                    showToast('Помилка читання файлу', 'danger');
                 }
             };
             reader.readAsText(file);
         }
 
-        // Initial render
-        renderAll();
+        /* ==========================================
+           11. MEDIA VIEWER & MODALS
+        ========================================== */
+        function openMediaViewer(mediaObj) {
+            let container = document.getElementById('mediaViewerContainer');
+            if (mediaObj.type === 'video') {
+                container.innerHTML = `<video controls autoplay style="max-width:100%; max-height:82vh; border-radius:12px;" src="${mediaObj.data}"></video>`;
+            } else if (mediaObj.type === 'pdf') {
+                container.innerHTML = `
+                    <div class="card" style="max-width:360px; margin:0 auto; text-align:center;">
+                        <div style="font-size:3rem;">📄</div>
+                        <h3>${mediaObj.title || 'PDF-документ'}</h3>
+                        <p>${mediaObj.tags || ''}</p>
+                        <a href="${mediaObj.data}" download="${mediaObj.title || 'document'}.pdf" class="btn" style="text-decoration:none;">⬇️ Завантажити / Відкрити PDF</a>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <img style="max-width:100%; max-height:80vh; border-radius:12px; object-fit:contain;" src="${mediaObj.data}">
+                    <p style="color:white; margin-top:10px; font-weight:bold;">${mediaObj.title || ''} <span style="opacity:0.8; font-weight:normal;">${mediaObj.tags || ''}</span></p>
+                `;
+            }
+            document.getElementById('mediaViewerModal').style.display = 'flex';
+        }
+
+        function closeMediaViewer(e) {
+            if (e.target.id === 'mediaViewerModal') {
+                document.getElementById('mediaViewerModal').style.display = 'none';
+                document.getElementById('mediaViewerContainer').innerHTML = '';
+            }
+        }
+
+        function openHelpModal() {
+            document.getElementById('helpModal').style.display = 'flex';
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        }
+
+        function renderAll() {
+            renderMembers();
+            updateDropdowns();
+            renderQuickFilterTags();
+            updateBackupSettingsUI();
+            checkBackupSchedule();
+        }
+
+        applyTheme();
+        initDB().then(() => {
+            renderAll();
+        });
     </script>
 </body>
 </html>
