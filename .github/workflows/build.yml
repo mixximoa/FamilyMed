@@ -12,19 +12,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      - name: Install Cordova
-        run: npm install -g cordova
-
-      - name: Create Cordova Project
+      - name: Install Cordova & ImageMagick
         run: |
-          cordova create myapp com.family.medcard FamilyMed
+          npm install -g cordova
+          sudo apt-get update && sudo apt-get install -y imagemagick
+
+      - name: Create Cordova Project & Add Plugins
+        run: |
+          cordova create myapp com.family.medcard "Сімейна Медкартка"
           cd myapp
           cordova platform add android
+          cordova plugin add cordova-plugin-file
+          cordova plugin add cordova-plugin-x-socialsharing
+
+      - name: Generate Medical App Icon & Configure Cordova
+        run: |
+          if [ -f "icon.png" ]; then
+            cp icon.png myapp/icon.png
+          else
+            # Автоматично малюємо красиву медичну іконку 512x512 (синьо-бірюзовий фон + білий медичний хрест)
+            convert -size 512x512 xc:none \
+              -fill "#0284c7" -draw "roundrectangle 0,0,512,512,110,110" \
+              -fill "#0d9488" -draw "roundrectangle 24,24,488,488,95,95" \
+              -fill "#ffffff" -draw "roundrectangle 206,106,306,406,25,25" \
+              -fill "#ffffff" -draw "roundrectangle 106,206,406,306,25,25" \
+              myapp/icon.png
+          fi
+          # Додаємо іконку та дозволи у config.xml
+          sed -i 's|</widget>|  <icon src="icon.png" />\n  <preference name="AndroidPersistentFileLocation" value="Compatibility" />\n</widget>|g' myapp/config.xml
 
       - name: Copy web app files
         run: |
@@ -39,5 +68,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: FamilyMed-PRO-APK
           path: myapp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
