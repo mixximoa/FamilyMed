@@ -18,15 +18,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Install Cordova and Build Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y npm openjdk-17-jdk
+          sudo npm install -g cordova
 
-      - name: Install Cordova
-        run: npm install -g cordova
-
-      - name: Install Android SDK Command-Line Tools & Platform Tools
+      - name: Setup Android SDK manually
         run: |
           mkdir -p $HOME/android-sdk/cmdline-tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
