@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,36 +24,66 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install Cordova & ImageMagick
-        run: |
-          npm install -g cordova
-          sudo apt-get update && sudo apt-get install -y imagemagick
+      - name: Install Cordova
+        run: npm install -g cordova
 
       - name: Create Cordova Project & Add Plugins
         run: |
-          cordova create myapp com.family.medcard "Сімейна Медкартка"
+          cordova create myapp com.family.medcard FamilyMed
           cd myapp
           cordova platform add android
           cordova plugin add cordova-plugin-file
           cordova plugin add cordova-plugin-x-socialsharing
 
-      - name: Generate Medical App Icon & Configure Cordova
+      - name: Generate Medical Icon & Set Ukrainian App Name
         run: |
+          python3 -c '
+          import struct, zlib
+          def make_icon(filename, w=512, h=512):
+              raw = bytearray()
+              for y in range(h):
+                  raw.append(0)
+                  for x in range(w):
+                      # Rounded square check
+                      dx = max(0, 90 - x, x - (w - 1 - 90))
+                      dy = max(0, 90 - y, y - (h - 1 - 90))
+                      if dx*dx + dy*dy > 90*90:
+                          raw.extend((0, 0, 0, 0))
+                          continue
+                      # White Medical Cross in the center
+                      in_v = (206 <= x <= 306) and (106 <= y <= 406)
+                      in_h = (106 <= x <= 406) and (206 <= y <= 306)
+                      if in_v or in_h:
+                          raw.extend((255, 255, 255, 255))
+                      else:
+                          # Gradient Teal-Blue background
+                          r = int(2 + (13 - 2) * (y / h))
+                          g = int(132 + (148 - 132) * (y / h))
+                          b = int(199 + (136 - 199) * (y / h))
+                          raw.extend((r, g, b, 255))
+              def chunk(tag, data):
+                  return struct.pack("!I", len(data)) + tag + data + struct.pack("!I", zlib.crc32(tag + data) & 0xffffffff)
+              png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack("!IIBBBBB", w, h, 8, 6, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
+              with open(filename, "wb") as f:
+                  f.write(png)
+          make_icon("myapp/icon.png")
+          '
           if [ -f "icon.png" ]; then
             cp icon.png myapp/icon.png
-          else
-            # Автоматично малюємо красиву медичну іконку 512x512 (синьо-бірюзовий фон + білий медичний хрест)
-            convert -size 512x512 xc:none \
-              -fill "#0284c7" -draw "roundrectangle 0,0,512,512,110,110" \
-              -fill "#0d9488" -draw "roundrectangle 24,24,488,488,95,95" \
-              -fill "#ffffff" -draw "roundrectangle 206,106,306,406,25,25" \
-              -fill "#ffffff" -draw "roundrectangle 106,206,406,306,25,25" \
-              myapp/icon.png
           fi
-          # Додаємо іконку та дозволи у config.xml
-          sed -i 's|</widget>|  <icon src="icon.png" />\n  <preference name="AndroidPersistentFileLocation" value="Compatibility" />\n</widget>|g' myapp/config.xml
+          python3 -c '
+          with open("myapp/config.xml", "r", encoding="utf-8") as f:
+              xml = f.read()
+          xml = xml.replace("<name>FamilyMed</name>", "<name>Сімейна Медкартка</name>")
+          custom_tags = """  <icon src="icon.png" />
+              <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+          </widget>"""
+          xml = xml.replace("</widget>", custom_tags)
+          with open("myapp/config.xml", "w", encoding="utf-8") as f:
+              f.write(xml)
+          '
 
       - name: Copy web app files
         run: |
