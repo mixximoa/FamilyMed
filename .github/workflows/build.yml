@@ -38,7 +38,7 @@ jobs:
           yes | sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Create Cordova Project & Add Plugins
+      - name: Create Cordova Project & Add Android Platform
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
@@ -46,8 +46,6 @@ jobs:
           cordova create myapp com.family.medcard FamilyMed
           cd myapp
           cordova platform add android --nosave
-          cordova plugin add cordova-plugin-file --nosave
-          cordova plugin add cordova-plugin-x-socialsharing --nosave
 
       - name: Generate Medical Icon & Set Ukrainian App Name
         run: |
