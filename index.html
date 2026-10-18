@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Сімейна Медкартка PRO</title>
+    <!-- Підключення мосту Cordova для роботи нативних функцій Android -->
+    <script src="cordova.js"></script>
     <style>
         :root {
             --primary: #0284c7;
@@ -473,20 +475,27 @@
 
                 <div class="form-row">
                     <button class="btn btn-teal" onclick="shareBackupToCloud()">☁️ Надіслати на Google Диск</button>
-                    <button class="btn" onclick="exportData()">📱 Завантажити в телефон</button>
+                    <button class="btn" onclick="exportData()">📱 Зберегти в Download</button>
                 </div>
-                <p style="font-size:0.78rem; margin-top:6px;">💡 <i>Кнопка «Надіслати на Google Диск» відкриває меню Android — оберіть іконку <b>Google Диск</b>, і повна база збережеться у вашій хмарі!</i></p>
+                <p style="font-size:0.78rem; margin-top:8px;">
+                    💡 <b>Як це працює на Android:</b><br>
+                    • <b>«☁️ Надіслати на Google Диск»</b> — відкриває системне меню телефона з прикріпленим файлом бази. Просто натисніть на іконку <b>Диск (Google Drive)</b> або Telegram!<br>
+                    • <b>«📱 Зберегти в Download»</b> — напряму записує файл резервної копії у папку <b>Завантаження (Download)</b> вашого телефона.
+                </p>
 
                 <div class="divider"></div>
-                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">⬆️ Відновити базу з файлу Backup (.json)</button>
-                <input type="file" id="importFile" accept=".json,application/json" style="display: none;" onchange="importData(event)">
+                <label>⬆️ Відновлення даних із файлу резервної копії</label>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📂 Вибрати файл Backup (.json) з телефона</button>
+                <input type="file" id="importFile" accept=".json,application/json,text/plain,*/*" style="display: none;" onchange="importData(event)">
 
-                <details style="margin-top:12px; font-size:0.82rem; color:var(--text-light);">
-                    <summary style="cursor:pointer; font-weight:700;">🔧 Пряме вивантаження через Google Drive API (Опціонально)</summary>
+                <!-- 100% Fallback: Text / Clipboard Backup -->
+                <details style="margin-top:14px; font-size:0.82rem; color:var(--text-light);">
+                    <summary style="cursor:pointer; font-weight:700; color:var(--primary);">📋 Резервний спосіб: Копіювання / Вставка через буфер обміну</summary>
                     <div style="margin-top:8px;">
-                        <p>Вставте OAuth2 Access Token для прямого фонового завантаження:</p>
-                        <input type="password" id="gdriveAccessToken" placeholder="ya29.a0AfH6SM..." onchange="saveGDriveToken(this.value)">
-                        <button class="btn btn-outline btn-sm" onclick="uploadDirectToGoogleDrive()">🚀 Вивантажити напряму через API</button>
+                        <p>Якщо потрібно швидко перекинути базу текстом (у нотатки чи повідомлення):</p>
+                        <button class="btn btn-outline btn-sm" style="width:100%; margin-bottom:8px;" onclick="copyBackupToClipboard()">📋 Скопіювати всю базу в буфер обміну</button>
+                        <textarea id="pasteBackupArea" rows="3" placeholder="Для відновлення вставте сюди скопійований код бази..."></textarea>
+                        <button class="btn btn-purple btn-sm" style="width:100%;" onclick="restoreFromPastedText()">🔄 Відновити базу з вставленого тексту</button>
                     </div>
                 </details>
             </div>
@@ -518,7 +527,7 @@
         </div>
     </div>
 
-    <!-- MODAL: ADD/EDIT MEMBER (WITH RELIABLE 3-DROPDOWN BIRTHDATE PICKER) -->
+    <!-- MODAL: ADD/EDIT MEMBER -->
     <div id="memberModal" class="modal">
         <div class="modal-content">
             <h3 id="memberModalTitle">Новий член родини</h3>
@@ -836,9 +845,9 @@
         <div class="modal-content">
             <h3>📖 Довідка по додатку «Сімейна Медкартка PRO»</h3>
             <div class="divider"></div>
-            <p><b>1. Жест «Назад» (змах з краю екрана):</b><br>Ви можете закривати будь-яке відкрите вікно або повертатися на головну вкладку стандартним жестом «Назад» на телефоні — програма не закриється!</p>
-            <p><b>2. Нагадування про наступну таблетку (🔔):</b><br>У вкладці «💊 Ліки й Аптечка» під кожним препаратом можна натиснути таймер (напр. <i>«Через 4 год»</i>, <i>«Через 8 год»</i> або вибрати точний час). Коли настане час, пролунає сигнал і з'явиться сповіщення. Також є кнопка <b>«⏰ У будильник»</b> для встановлення системного нагадування Android.</p>
-            <p><b>3. Домашня аптечка:</b><br>Зберігає ревізію всіх наявних вдома медикаментів і попереджає червоним кольором, коли виходить їхній термін придатності.</p>
+            <p><b>1. Як робити резервну копію на Google Диск та телефон:</b><br>У вкладці «⚙️ Меню» натисніть <b>«☁️ Надіслати на Google Диск»</b> — відкриється меню телефона, де достатньо натиснути на іконку Google Диску. А кнопка <b>«📱 Зберегти в Download»</b> записує файл напряму у папку Завантаження вашого телефона!</p>
+            <p><b>2. Жест «Назад» (змах з краю екрана):</b><br>Ви можете закривати будь-яке відкрите вікно або повертатися на головну вкладку стандартним жестом «Назад» на телефоні.</p>
+            <p><b>3. Нагадування про наступну таблетку (🔔):</b><br>У вкладці «💊 Ліки й Аптечка» під кожним препаратом можна натиснути таймер (напр. <i>«+4 год»</i>, <i>«+8 год»</i> або вибрати точний час).</p>
             <button class="btn" onclick="closeModals()">Зрозуміло, дякую!</button>
         </div>
     </div>
@@ -878,7 +887,6 @@
 
         document.getElementById('medTrackerDate').value = new Date().toISOString().split('T')[0];
 
-        // Populate Birthdate & Expiry Dropdowns so they ALWAYS work reliably on Android WebView
         function initDateDropdowns() {
             let daySel = document.getElementById('mBirthDay');
             let monthSel = document.getElementById('mBirthMonth');
@@ -901,7 +909,6 @@
             }
             yearSel.innerHTML = yearsHtml;
 
-            // Cabinet Expiry Month/Year
             let cabM = document.getElementById('cabExpMonth');
             let cabY = document.getElementById('cabExpYear');
             cabM.innerHTML = MONTHS_UK.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}">${String(i+1).padStart(2,'0')} - ${m}</option>`).join('');
@@ -913,7 +920,6 @@
         }
         initDateDropdowns();
 
-        // Force Android native date picker to open on tap anywhere in input
         function triggerDatePicker(inputId) {
             let el = document.getElementById(inputId);
             if (el && typeof el.showPicker === 'function') {
@@ -938,7 +944,6 @@
             }
         }
 
-        // Browser / WebView History Popstate (Swipe Back Gesture on Android)
         window.addEventListener('popstate', function(e) {
             if (isAnyModalOpen()) {
                 closeModals(true);
@@ -950,7 +955,6 @@
             }
         });
 
-        // Cordova Native Backbutton Event
         document.addEventListener('backbutton', function(e) {
             if (isAnyModalOpen()) {
                 e.preventDefault();
@@ -965,7 +969,6 @@
             }
         }, false);
 
-        // Backdrop click on modals also closes them smoothly
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === modal && modal.id !== 'confirmModal' && modal.id !== 'alarmPopupModal') {
@@ -1054,7 +1057,7 @@
                 toast.style.transform = 'translateY(-20px)';
                 toast.style.transition = '0.3s';
                 setTimeout(() => toast.remove(), 300);
-            }, 2500);
+            }, 2800);
         }
 
         let confirmCallback = null;
@@ -1153,7 +1156,6 @@
             }
             document.getElementById('tab-' + tabName).style.display = 'block';
 
-            // Auto-reset search query when switching back to Journal or Docs so user sees the full list!
             if (tabName === 'visits') {
                 document.getElementById('searchQuery').value = '';
                 document.getElementById('clearSearchBtn').style.display = 'none';
@@ -1481,7 +1483,6 @@
             let timeStr = new Date(targetTime).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
             if (!dbData.reminders) dbData.reminders = [];
-            // Replace existing reminder for this med
             dbData.reminders = dbData.reminders.filter(r => r.medId !== medId);
             dbData.reminders.push({
                 id: Date.now().toString(),
@@ -1509,7 +1510,7 @@
             let target = new Date();
             target.setHours(hh, mm, 0, 0);
             if (target.getTime() <= now.getTime()) {
-                target.setDate(target.getDate() + 1); // Tomorrow if time already passed today
+                target.setDate(target.getDate() + 1);
             }
 
             if (!dbData.reminders) dbData.reminders = [];
@@ -1534,7 +1535,6 @@
             showToast('Нагадування скасовано', 'warning');
         }
 
-        // Open Android System Calendar/Alarm Reminder so OS guarantees wakeup
         function openSystemReminder(medId) {
             let med = (dbData.medications || []).find(x => x.id === medId);
             if (!med) return;
@@ -1550,7 +1550,6 @@
             window.open(url, '_blank');
         }
 
-        // Background checker every 10 seconds for due pill reminders
         setInterval(() => {
             if (!dbData.reminders || dbData.reminders.length === 0) return;
             let now = Date.now();
@@ -1708,7 +1707,7 @@
                 showToast(`Відмітку знято (${slotName})`, 'warning');
             } else {
                 med.logs[key] = true;
-                showToast(`Прийнято: ${med.name} (${slotName}) ✅ Встановіть таймер наступного прийому нижче!`);
+                showToast(`Прийнято: ${med.name} (${slotName}) ✅`);
             }
             saveToIDB();
             renderMeds();
@@ -1796,7 +1795,6 @@
                             <div class="dose-grid">${dosesHtml}</div>
                         </div>
 
-                        <!-- NEXT DOSE REMINDER PANEL -->
                         <div class="reminder-panel">
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
                                 <span style="font-size:0.78rem; font-weight:700; color:var(--purple);">🔔 2. НАГАДАТИ ПРО НАСТУПНИЙ ПРИЙОМ:</span>
@@ -2597,11 +2595,11 @@
         }
 
         /* ==========================================
-           11. CLOUD BACKUP, SCHEDULE & GOOGLE DRIVE
+           11. CORDOVA NATIVE BACKUP (GOOGLE DRIVE & PHONE)
         ========================================== */
         function buildBackupPayload() {
             return JSON.stringify({
-                version: 5,
+                version: 6,
                 exportedAt: new Date().toISOString(),
                 members: dbData.members,
                 visits: dbData.visits,
@@ -2624,17 +2622,9 @@
             showToast('Інтервал резервного копіювання збережено! ⏰');
         }
 
-        function saveGDriveToken(token) {
-            appSettings.gdriveToken = token.trim();
-            saveSettings();
-        }
-
         function updateBackupSettingsUI() {
             let sel = document.getElementById('backupIntervalSelect');
             if (sel) sel.value = (appSettings.backupIntervalDays !== undefined ? appSettings.backupIntervalDays : 7).toString();
-            
-            let tokInput = document.getElementById('gdriveAccessToken');
-            if (tokInput) tokInput.value = appSettings.gdriveToken || '';
 
             let infoEl = document.getElementById('lastBackupInfo');
             if (infoEl) {
@@ -2667,72 +2657,144 @@
             banner.style.display = diffDays >= intervalDays ? 'flex' : 'none';
         }
 
+        // Helper: Convert UTF-8 string to Base64 safely
+        function utf8ToBase64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        // 1. CLOUD / GOOGLE DRIVE SHARE (Cordova SocialSharing Plugin + Web Share Fallback)
         async function shareBackupToCloud() {
             let jsonStr = buildBackupPayload();
             let fileName = `FamilyMed_Backup_${new Date().toISOString().split('T')[0]}.json`;
-            let file = new File([jsonStr], fileName, { type: 'application/json' });
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            // A) If running inside Cordova Android APK with SocialSharing plugin:
+            if (window.plugins && window.plugins.socialsharing) {
                 try {
-                    await navigator.share({
-                        title: 'Резервна копія Сімейна Медкартка PRO',
-                        text: 'Файл бази даних для збереження на Google Диск',
-                        files: [file]
+                    let base64Data = `data:application/json;base64,${utf8ToBase64(jsonStr)}`;
+                    window.plugins.socialsharing.shareWithOptions({
+                        message: 'Резервна копія бази Сімейна Медкартка PRO',
+                        subject: fileName,
+                        files: [base64Data],
+                        chooserTitle: 'Оберіть Google Диск або месенджер'
+                    }, function(result) {
+                        markBackupCompleted();
+                        showToast('Файл передано у хмару / Google Диск! ☁️');
+                    }, function(errMsg) {
+                        showToast('Помилка відправки: ' + errMsg, 'danger');
                     });
-                    markBackupCompleted();
-                    showToast('Відправлено у хмару / Google Диск! ☁️');
                     return;
+                } catch (e) {
+                    console.error("SocialSharing error:", e);
+                }
+            }
+
+            // B) If running in mobile/desktop browser with Web Share API:
+            if (navigator.canShare) {
+                try {
+                    let file = new File([jsonStr], fileName, { type: 'application/json' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            title: 'Резервна копія Сімейна Медкартка PRO',
+                            files: [file]
+                        });
+                        markBackupCompleted();
+                        showToast('Відправлено у хмару! ☁️');
+                        return;
+                    }
                 } catch (err) {
                     if (err.name === 'AbortError') return;
                 }
             }
+
+            // C) Fallback to local save
             exportData();
         }
 
+        // 2. SAVE DIRECTLY TO PHONE STORAGE (Cordova File Plugin + Browser Download Fallback)
         function exportData() {
             let jsonStr = buildBackupPayload();
+            let fileName = `FamilyMed_PRO_Backup_${new Date().toISOString().split('T')[0]}.json`;
+
+            // A) If running inside Cordova Android APK with cordova-plugin-file:
+            if (window.cordova && window.cordova.file && window.resolveLocalFileSystemURL) {
+                // Try public Download folder first, fallback to externalDataDirectory
+                let targetDir = 'file:///storage/emulated/0/Download/';
+                
+                function writeToDir(dirPath, onSuccess, onFail) {
+                    window.resolveLocalFileSystemURL(dirPath, function(dirEntry) {
+                        dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
+                            fileEntry.createWriter(function(fileWriter) {
+                                fileWriter.onwriteend = function() {
+                                    onSuccess(fileEntry.nativeURL);
+                                };
+                                fileWriter.onerror = onFail;
+                                let blob = new Blob([jsonStr], { type: 'application/json' });
+                                fileWriter.write(blob);
+                            }, onFail);
+                        }, onFail);
+                    }, onFail);
+                }
+
+                writeToDir(targetDir, function(savedPath) {
+                    markBackupCompleted();
+                    showToast(`✅ Збережено в папку Download: ${fileName}`);
+                }, function() {
+                    // Fallback to app external storage and open Share dialog so user can save it anywhere
+                    let fallbackDir = cordova.file.externalDataDirectory || cordova.file.dataDirectory;
+                    writeToDir(fallbackDir, function(savedPath) {
+                        markBackupCompleted();
+                        if (window.plugins && window.plugins.socialsharing) {
+                            window.plugins.socialsharing.share(null, fileName, savedPath, null);
+                        } else {
+                            showToast(`Збережено в пам'ять додатка: ${fileName}`);
+                        }
+                    }, function() {
+                        showToast('Скористайтеся кнопкою «Надіслати на Google Диск» або копіюванням у буфер!', 'warning');
+                    });
+                });
+                return;
+            }
+
+            // B) Standard Browser Download (on PC)
             let blob = new Blob([jsonStr], { type: 'application/json' });
             let url = URL.createObjectURL(blob);
             let a = document.createElement('a');
             a.href = url;
-            a.download = `FamilyMed_PRO_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.download = fileName;
             document.body.appendChild(a);
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
             markBackupCompleted();
-            showToast('Резервну копію збережено в телефон! 📱');
+            showToast('Резервну копію завантажено! 📱');
         }
 
-        async function uploadDirectToGoogleDrive() {
-            let token = (appSettings.gdriveToken || '').trim();
-            if (!token) {
-                showToast('Спочатку введіть OAuth2 Access Token або скористайтеся кнопкою «Надіслати на Google Диск»!', 'warning');
-                return;
-            }
-            try {
-                showToast('Завантаження на Google Диск...');
-                let fileName = `FamilyMed_PRO_Backup_${new Date().toISOString().split('T')[0]}.json`;
-                let metadata = { name: fileName, mimeType: 'application/json' };
-                let form = new FormData();
-                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                form.append('file', new Blob([buildBackupPayload()], { type: 'application/json' }));
-
-                let res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + token },
-                    body: form
-                });
-
-                if (res.ok) {
+        // 3. CLIPBOARD BACKUP & RESTORE (100% Universal Fallback)
+        function copyBackupToClipboard() {
+            let jsonStr = buildBackupPayload();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(jsonStr).then(() => {
                     markBackupCompleted();
-                    showToast('Успішно завантажено напряму в Google Диск! ☁️');
-                } else {
-                    showToast('Помилка авторизації токена. Використайте кнопку «Надіслати на Google Диск»', 'danger');
-                }
-            } catch (e) {
-                showToast('Помилка мережі при з\'єднанні з Google Drive', 'danger');
+                    showToast('Код бази скопійовано в буфер обміну! 📋');
+                }).catch(() => fallbackCopyText(jsonStr));
+            } else {
+                fallbackCopyText(jsonStr);
             }
+        }
+
+        function fallbackCopyText(text) {
+            let ta = document.getElementById('pasteBackupArea');
+            ta.value = text;
+            ta.select();
+            document.execCommand('copy');
+            markBackupCompleted();
+            showToast('Код бази скопійовано та виведено у текстове поле! 📋');
+        }
+
+        function restoreFromPastedText() {
+            let text = document.getElementById('pasteBackupArea').value.trim();
+            if (!text) { showToast('Спочатку вставте скопійований код бази у поле!', 'warning'); return; }
+            processImportedJSON(text);
         }
 
         function importData(event) {
@@ -2740,29 +2802,35 @@
             if (!file) return;
             let reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    let imported = JSON.parse(e.target.result);
-                    if (imported.members && imported.visits) {
-                        dbData.members = imported.members;
-                        dbData.visits = imported.visits;
-                        dbData.medications = imported.medications || [];
-                        dbData.cabinet = imported.cabinet || [];
-                        dbData.reminders = imported.reminders || [];
-                        if (imported.settings) {
-                            appSettings = { ...appSettings, ...imported.settings };
-                            saveSettings();
-                            applyTheme();
-                        }
-                        saveToIDB();
-                        showToast('Базу даних успішно відновлено! 🎉');
-                    } else {
-                        showToast('Невірний формат файлу резервної копії', 'danger');
-                    }
-                } catch (err) {
-                    showToast('Помилка читання файлу', 'danger');
-                }
+                processImportedJSON(e.target.result);
+                event.target.value = '';
             };
             reader.readAsText(file);
+        }
+
+        function processImportedJSON(jsonText) {
+            try {
+                let imported = JSON.parse(jsonText);
+                if (imported.members && imported.visits) {
+                    dbData.members = imported.members;
+                    dbData.visits = imported.visits;
+                    dbData.medications = imported.medications || [];
+                    dbData.cabinet = imported.cabinet || [];
+                    dbData.reminders = imported.reminders || [];
+                    if (imported.settings) {
+                        appSettings = { ...appSettings, ...imported.settings };
+                        saveSettings();
+                        applyTheme();
+                    }
+                    saveToIDB();
+                    document.getElementById('pasteBackupArea').value = '';
+                    showToast('Базу даних успішно відновлено! 🎉');
+                } else {
+                    showToast('Невірний формат файлу резервної копії', 'danger');
+                }
+            } catch (err) {
+                showToast('Помилка читання JSON-коду', 'danger');
+            }
         }
 
         /* ==========================================
@@ -2779,7 +2847,7 @@
                         <div style="font-size:3rem;">📄</div>
                         <h3>${mediaObj.title || 'PDF-документ'}</h3>
                         <p>${mediaObj.tags || ''}</p>
-                        <a href="${mediaObj.data}" download="${mediaObj.title || 'document'}.pdf" class="btn" style="text-decoration:none;">⬇️ Завантажити / Відкрити PDF</a>
+                        <button class="btn" onclick='shareSingleMediaFile(${JSON.stringify(mediaObj)})'>📂 Відкрити / Переслати PDF</button>
                     </div>
                 `;
             } else {
@@ -2789,6 +2857,19 @@
                 `;
             }
             document.getElementById('mediaViewerModal').style.display = 'flex';
+        }
+
+        function shareSingleMediaFile(mediaObj) {
+            if (window.plugins && window.plugins.socialsharing) {
+                window.plugins.socialsharing.share(null, mediaObj.title || 'document.pdf', mediaObj.data, null);
+            } else {
+                let a = document.createElement('a');
+                a.href = mediaObj.data;
+                a.download = (mediaObj.title || 'document') + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
         }
 
         function closeMediaViewer(e) {
