@@ -98,8 +98,13 @@
         input, select, textarea { width: 100%; padding: 11px 12px; margin: 5px 0 12px 0; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
         label { font-size: 0.82rem; font-weight: 700; color: var(--text-light); display: block; margin-top: 4px; }
-        .form-row { display: flex; gap: 10px; }
+        .form-row { display: flex; gap: 8px; }
         .form-row > div { flex: 1; }
+
+        /* Search Input with Clear Button */
+        .input-clear-wrap { position: relative; display: flex; align-items: center; }
+        .input-clear-wrap input { padding-right: 38px; }
+        .clear-input-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-60%); background: var(--border); color: var(--text); border: none; width: 24px; height: 24px; border-radius: 50%; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center; }
 
         /* Badges & Chips */
         .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; font-size: 0.73rem; font-weight: 700; background: var(--primary-light); color: var(--primary); border-radius: 6px; margin-right: 4px; margin-bottom: 4px; }
@@ -115,7 +120,7 @@
         .chip:active, .chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
         .chip-funny { border-style: dashed; border-color: var(--purple); color: var(--purple); }
 
-        /* Pill Tracker Specific Styles */
+        /* Pill Tracker & Reminder Box */
         .date-navigator { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 14px; box-shadow: var(--shadow); }
         .date-nav-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; }
         .dose-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
@@ -124,6 +129,10 @@
         .dose-btn:active { transform: scale(0.96); }
         .slot-check-label { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1.5px solid var(--border); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-right: 6px; margin-bottom: 6px; }
         .slot-check-label input { width: auto; margin: 0; }
+        
+        .reminder-panel { background: var(--bg); border: 1px dashed var(--purple); border-radius: 12px; padding: 10px; margin-top: 10px; }
+        .timer-chip { background: var(--card-bg); border: 1px solid var(--border); padding: 5px 9px; border-radius: 8px; font-size: 0.76rem; font-weight: 700; cursor: pointer; color: var(--purple); display: inline-block; margin: 3px 2px; }
+        .timer-chip:active { background: var(--purple); color: white; }
 
         /* Search History Dropdown */
         .search-wrapper { position: relative; }
@@ -211,6 +220,9 @@
             <button class="btn btn-sm" style="background:white; color:#ea580c; flex-shrink:0;" onclick="shareBackupToCloud()">☁️ Бекап</button>
         </div>
 
+        <!-- ACTIVE REMINDERS BANNER -->
+        <div id="activeRemindersBanner" style="display:none;" class="card"></div>
+
         <!-- TAB 1: FAMILY MEMBERS -->
         <div id="tab-members" class="tab-content">
             <button class="btn" onclick="openMemberModal()">➕ Додати члена родини</button>
@@ -227,7 +239,10 @@
             <div class="card">
                 <div class="search-wrapper">
                     <label>🔍 Розумний пошук (лікар, діагноз, ліки, #хештег)</label>
-                    <input type="text" id="searchQuery" placeholder="Напр. кардіолог, #рентген, застуда..." onfocus="showSearchHistory()" oninput="renderVisits()" onchange="saveSearchQuery(this.value)">
+                    <div class="input-clear-wrap">
+                        <input type="text" id="searchQuery" placeholder="Напр. кардіолог, #рентген, застуда..." onfocus="showSearchHistory()" oninput="onSearchInput()" onchange="saveSearchQuery(this.value)">
+                        <button type="button" class="clear-input-btn" id="clearSearchBtn" onclick="clearSearchInput()">✖</button>
+                    </div>
                     <div id="searchHistoryBox" class="search-history-box"></div>
                 </div>
 
@@ -262,7 +277,6 @@
 
         <!-- TAB 3: MEDICATION TRACKER & HOME PHARMACY CABINET -->
         <div id="tab-meds" class="tab-content" style="display: none;">
-            <!-- Sub-navigation switch -->
             <div class="sub-tabs">
                 <div class="sub-tab active" id="subTabBtnTracker" onclick="switchMedSubTab('tracker')">📅 Трекер прийому</div>
                 <div class="sub-tab" id="subTabBtnCabinet" onclick="switchMedSubTab('cabinet')">🧰 Домашня аптечка</div>
@@ -274,9 +288,9 @@
 
                 <div class="date-navigator">
                     <button class="date-nav-btn" onclick="shiftMedDate(-1)">◀</button>
-                    <div style="text-align:center;">
+                    <div style="text-align:center;" onclick="triggerDatePicker('medTrackerDate')">
                         <div style="font-size:0.75rem; color:var(--text-light); font-weight:700;">ВІДМІТКА ПРИЙОМУ ЗА ДАТУ:</div>
-                        <input type="date" id="medTrackerDate" onchange="renderMeds()" style="margin:2px 0 0 0; padding:4px 8px; font-weight:800; font-size:0.95rem; text-align:center; border:none; background:transparent; width:auto;">
+                        <input type="date" id="medTrackerDate" onclick="triggerDatePicker('medTrackerDate')" onchange="renderMeds()" style="margin:2px 0 0 0; padding:4px 8px; font-weight:800; font-size:0.95rem; text-align:center; border:none; background:transparent; width:auto; cursor:pointer;">
                     </div>
                     <button class="date-nav-btn" onclick="shiftMedDate(1)">▶</button>
                 </div>
@@ -300,7 +314,6 @@
             <div id="med-sub-cabinet" style="display:none;">
                 <button class="btn btn-teal" onclick="openCabinetModal()" style="margin-top:0; margin-bottom:12px;">➕ Додати ліки в домашню аптечку</button>
 
-                <!-- Summary badges for cabinet -->
                 <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:12px;">
                     <div class="stat-box" style="padding:8px;">
                         <h4 id="cabStatTotal" style="font-size:1.15rem;">0</h4>
@@ -357,7 +370,10 @@
             <div class="card">
                 <h3>📁 Галерея аналізів, виписок та знімків</h3>
                 <label>Пошук за назвою або #хештегом</label>
-                <input type="text" id="docSearchQuery" placeholder="Введіть #аналізи, #рентген, #УЗД..." oninput="renderDocumentsArchive()">
+                <div class="input-clear-wrap">
+                    <input type="text" id="docSearchQuery" placeholder="Введіть #аналізи, #рентген, #УЗД..." oninput="renderDocumentsArchive()">
+                    <button type="button" class="clear-input-btn" style="display:flex;" onclick="document.getElementById('docSearchQuery').value=''; renderDocumentsArchive();">✖</button>
+                </div>
                 <div class="chips-container" id="docQuickTags"></div>
                 <label>Фільтр по члену родини</label>
                 <select id="docFilterMember" onchange="renderDocumentsArchive()"><option value="">Усі члени родини</option></select>
@@ -442,7 +458,6 @@
 
         <!-- TAB 7: SETTINGS & CLOUD BACKUP -->
         <div id="tab-settings" class="tab-content" style="display: none;">
-            <!-- BACKUP & GOOGLE DRIVE CARD -->
             <div class="card" style="border: 2px solid var(--primary);">
                 <h3>☁️ Резервне копіювання (Телефон + Google Диск)</h3>
                 <p id="lastBackupInfo" style="font-weight:600; color:var(--primary); margin-bottom:10px;">Останній бекап: ще не виконувався</p>
@@ -460,17 +475,16 @@
                     <button class="btn btn-teal" onclick="shareBackupToCloud()">☁️ Надіслати на Google Диск</button>
                     <button class="btn" onclick="exportData()">📱 Завантажити в телефон</button>
                 </div>
-                <p style="font-size:0.78rem; margin-top:6px;">💡 <i>Кнопка «Надіслати на Google Диск» відкриває вікно збереження Android — просто оберіть іконку <b>Google Диск</b> (або Telegram), і повна база збережеться у вашій хмарі!</i></p>
+                <p style="font-size:0.78rem; margin-top:6px;">💡 <i>Кнопка «Надіслати на Google Диск» відкриває меню Android — оберіть іконку <b>Google Диск</b>, і повна база збережеться у вашій хмарі!</i></p>
 
                 <div class="divider"></div>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">⬆️ Відновити базу з файлу Backup (.json)</button>
                 <input type="file" id="importFile" accept=".json,application/json" style="display: none;" onchange="importData(event)">
 
-                <!-- Advanced Direct Google Drive API Token Upload -->
                 <details style="margin-top:12px; font-size:0.82rem; color:var(--text-light);">
                     <summary style="cursor:pointer; font-weight:700;">🔧 Пряме вивантаження через Google Drive API (Опціонально)</summary>
                     <div style="margin-top:8px;">
-                        <p>Якщо ви маєте власний OAuth2 Access Token для Google Drive API, вставте його нижче для прямого завантаження без діалогових вікон:</p>
+                        <p>Вставте OAuth2 Access Token для прямого фонового завантаження:</p>
                         <input type="password" id="gdriveAccessToken" placeholder="ya29.a0AfH6SM..." onchange="saveGDriveToken(this.value)">
                         <button class="btn btn-outline btn-sm" onclick="uploadDirectToGoogleDrive()">🚀 Вивантажити напряму через API</button>
                     </div>
@@ -504,7 +518,7 @@
         </div>
     </div>
 
-    <!-- MODAL: ADD/EDIT MEMBER -->
+    <!-- MODAL: ADD/EDIT MEMBER (WITH RELIABLE 3-DROPDOWN BIRTHDATE PICKER) -->
     <div id="memberModal" class="modal">
         <div class="modal-content">
             <h3 id="memberModalTitle">Новий член родини</h3>
@@ -523,16 +537,31 @@
             <label>ПІБ / Ім'я *</label>
             <input type="text" id="mName" placeholder="напр. Олександр Анатолійович">
             
-            <div class="form-row">
-                <div>
-                    <label>Дата народження</label>
-                    <input type="date" id="mBirth">
+            <label>🎂 Дата народження (День / Місяць / Рік)</label>
+            <div class="form-row" style="gap:6px;">
+                <div style="flex:0.8;">
+                    <select id="mBirthDay" style="margin-top:4px;"></select>
                 </div>
-                <div>
-                    <label>Група крові та резус</label>
-                    <input type="text" id="mBlood" placeholder="напр. II+ (A+)">
+                <div style="flex:1.4;">
+                    <select id="mBirthMonth" style="margin-top:4px;"></select>
+                </div>
+                <div style="flex:1.1;">
+                    <select id="mBirthYear" style="margin-top:4px;"></select>
                 </div>
             </div>
+
+            <label>🩸 Група крові та резус</label>
+            <select id="mBlood">
+                <option value="">— Не вказано —</option>
+                <option value="I+ (O+)">I+ (O+) перша позитивна</option>
+                <option value="I- (O-)">I- (O-) перша негативна</option>
+                <option value="II+ (A+)">II+ (A+) друга позитивна</option>
+                <option value="II- (A-)">II- (A-) друга негативна</option>
+                <option value="III+ (B+)">III+ (B+) третя позитивна</option>
+                <option value="III- (B-)">III- (B-) третя негативна</option>
+                <option value="IV+ (AB+)">IV+ (AB+) четверта позитивна</option>
+                <option value="IV- (AB-)">IV- (AB-) четверта негативна</option>
+            </select>
 
             <label>⚠️ Алергії та непереносимість ліків</label>
             <input type="text" id="mAllergies" placeholder="напр. Пеніцилін, пилок амброзії (або 'немає')">
@@ -541,7 +570,7 @@
             <textarea id="mChronic" rows="2" placeholder="напр. Носить окуляри, операція у 2019 році..."></textarea>
 
             <button class="btn" onclick="saveMember()">✅ Зберегти профіль</button>
-            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати (Назад)</button>
         </div>
     </div>
 
@@ -585,7 +614,7 @@
             <div class="form-row">
                 <div>
                     <label>Дата початку курсу *</label>
-                    <input type="date" id="medStartDate">
+                    <input type="date" id="medStartDate" onclick="triggerDatePicker('medStartDate')">
                 </div>
                 <div>
                     <label>Тривалість (днів) *</label>
@@ -597,11 +626,11 @@
             <input type="text" id="medNotes" placeholder="напр. Запивати великою кількістю води">
 
             <button class="btn btn-purple" onclick="saveMedCourse()">✅ Зберегти курс лікування</button>
-            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати (Назад)</button>
         </div>
     </div>
 
-    <!-- MODAL: ADD/EDIT HOME CABINET MEDICINE (ДОМАШНЯ АПТЕЧКА) -->
+    <!-- MODAL: ADD/EDIT HOME CABINET MEDICINE -->
     <div id="cabinetModal" class="modal">
         <div class="modal-content">
             <h3 id="cabModalTitle">🧰 Додати ліки в домашню аптечку</h3>
@@ -610,36 +639,38 @@
             <label>Назва препарату та форма випуску *</label>
             <input type="text" id="cabName" placeholder="напр. Нурофен Форте сироп, Цитрамон, Бетадин">
 
+            <label>Категорія / Призначення</label>
+            <select id="cabCategory">
+                <option value="🌡 Жарознижувальне / Застуда">🌡 Жарознижувальне / Застуда</option>
+                <option value="💊 Знеболювальне / Спазми">💊 Знеболювальне / Спазми</option>
+                <option value="🤢 Шлунок / Травлення">🤢 Шлунок / Травлення</option>
+                <option value="🩹 Антисептики / Перев'язка">🩹 Антисептики / Перев'язка</option>
+                <option value="🤧 Алергія">🤧 Алергія</option>
+                <option value="👂 Очі / Вуха / Ніс">👂 Очі / Вуха / Ніс</option>
+                <option value="❤️ Серце / Тиск">❤️ Серце / Тиск</option>
+                <option value="🧴 Мазі / Гелі">🧴 Мазі / Гелі</option>
+                <option value="🦠 Антибіотики">🦠 Антибіотики</option>
+                <option value="🍓 Вітаміни / Інше">🍓 Вітаміни / Інше</option>
+            </select>
+
+            <label>📅 Придатний ДО (Місяць та Рік) *</label>
             <div class="form-row">
                 <div>
-                    <label>Категорія / Призначення</label>
-                    <select id="cabCategory">
-                        <option value="🌡 Жарознижувальне / Застуда">🌡 Жарознижувальне / Застуда</option>
-                        <option value="💊 Знеболювальне / Спазми">💊 Знеболювальне / Спазми</option>
-                        <option value="🤢 Шлунок / Травлення">🤢 Шлунок / Травлення</option>
-                        <option value="🩹 Антисептики / Перев'язка">🩹 Антисептики / Перев'язка</option>
-                        <option value="🤧 Алергія">🤧 Алергія</option>
-                        <option value="👂 Очі / Вуха / Ніс">👂 Очі / Вуха / Ніс</option>
-                        <option value="❤️ Серце / Тиск">❤️ Серце / Тиск</option>
-                        <option value="🧴 Мазі / Гелі">🧴 Мазі / Гелі</option>
-                        <option value="🦠 Антибіотики">🦠 Антибіотики</option>
-                        <option value="🍓 Вітаміни / Інше">🍓 Вітаміни / Інше</option>
-                    </select>
+                    <select id="cabExpMonth"></select>
                 </div>
                 <div>
-                    <label>Придатний ДО (Місяць і Рік) *</label>
-                    <input type="month" id="cabExpiry">
+                    <select id="cabExpYear"></select>
                 </div>
             </div>
 
             <div class="form-row">
                 <div>
-                    <label>Скільки залишилося в наявності</label>
+                    <label>Скільки залишилося</label>
                     <input type="text" id="cabQty" placeholder="напр. 12 таб. / Пів флакона">
                 </div>
                 <div>
                     <label>Де зберігається вдома?</label>
-                    <input type="text" id="cabLocation" placeholder="напр. Коробка на кухні / Холодильник">
+                    <input type="text" id="cabLocation" placeholder="напр. Коробка на кухні">
                 </div>
             </div>
 
@@ -647,7 +678,7 @@
             <textarea id="cabNotes" rows="2" placeholder="напр. Дитині по 5 мл при температурі вище 38.5..."></textarea>
 
             <button class="btn btn-teal" onclick="saveCabinetItem()">✅ Зберегти в аптечку</button>
-            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати (Назад)</button>
         </div>
     </div>
 
@@ -664,7 +695,7 @@
                 </div>
                 <div>
                     <label>Дата візиту *</label>
-                    <input type="date" id="vDate">
+                    <input type="date" id="vDate" onclick="triggerDatePicker('vDate')">
                 </div>
             </div>
 
@@ -726,7 +757,7 @@
             <div id="vAudioPreview"></div>
             
             <button class="btn" onclick="saveVisit()" style="margin-top:16px;">✅ Зберегти візит</button>
-            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати (Назад)</button>
         </div>
     </div>
 
@@ -743,7 +774,7 @@
                 </div>
                 <div>
                     <label>Дата початку *</label>
-                    <input type="date" id="hDate">
+                    <input type="date" id="hDate" onclick="triggerDatePicker('hDate')">
                 </div>
             </div>
 
@@ -768,7 +799,7 @@
             <div id="hMediaItemsList"></div>
             
             <button class="btn btn-teal" onclick="saveHomeIllness()" style="margin-top:16px;">✅ Зберегти запис</button>
-            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати (Назад)</button>
         </div>
     </div>
 
@@ -790,14 +821,24 @@
         </div>
     </div>
 
+    <!-- MODAL: ALARM ALERT POPUP WHEN TIMER FIRES -->
+    <div id="alarmPopupModal" class="modal center-modal">
+        <div class="modal-content" style="text-align:center; border:3px solid var(--purple);">
+            <div style="font-size:3.2rem; margin-bottom:6px;">⏰💊</div>
+            <h2 style="color:var(--purple); margin-bottom:8px;">Час прийняти ліки!</h2>
+            <p id="alarmPopupText" style="font-size:1.1rem; font-weight:700; margin-bottom:16px;"></p>
+            <button class="btn btn-purple" onclick="stopAlarmAndClose()">✅ Зрозуміло, приймаю!</button>
+        </div>
+    </div>
+
     <!-- MODAL: HELP / FAQ -->
     <div id="helpModal" class="modal">
         <div class="modal-content">
             <h3>📖 Довідка по додатку «Сімейна Медкартка PRO»</h3>
             <div class="divider"></div>
-            <p><b>1. Трекер ліків та Домашня аптечка (💊 Ліки й Аптечка):</b><br>У вкладці ліків є перемикач: <b>«Трекер прийому»</b> дозволяє відмічати галочками випиті таблетки вранці чи ввечері, а <b>«Домашня аптечка»</b> зберігає ревізію всіх наявних вдома медикаментів і автоматично попереджає червоним кольором, коли виходить їхній термін придатності!</p>
-            <p><b>2. Резервне копіювання на Google Диск та Інтервал:</b><br>У вкладці «⚙️ Меню» оберіть інтервал (наприклад, раз на тиждень або місяць). Програма сама нагадає, коли прийде час. Натисніть <b>«☁️ Надіслати на Google Диск»</b> і оберіть у меню телефона Google Диск — файл збережеться у хмарі за 2 секунди!</p>
-            <p><b>3. Фінансова бухгалтерія:</b><br>Вказуйте витрати на прийом та аптеку. У вкладці <b>«Аналітика»</b> ви бачите статистику витрат по кожному члену сім'ї.</p>
+            <p><b>1. Жест «Назад» (змах з краю екрана):</b><br>Ви можете закривати будь-яке відкрите вікно або повертатися на головну вкладку стандартним жестом «Назад» на телефоні — програма не закриється!</p>
+            <p><b>2. Нагадування про наступну таблетку (🔔):</b><br>У вкладці «💊 Ліки й Аптечка» під кожним препаратом можна натиснути таймер (напр. <i>«Через 4 год»</i>, <i>«Через 8 год»</i> або вибрати точний час). Коли настане час, пролунає сигнал і з'явиться сповіщення. Також є кнопка <b>«⏰ У будильник»</b> для встановлення системного нагадування Android.</p>
+            <p><b>3. Домашня аптечка:</b><br>Зберігає ревізію всіх наявних вдома медикаментів і попереджає червоним кольором, коли виходить їхній термін придатності.</p>
             <button class="btn" onclick="closeModals()">Зрозуміло, дякую!</button>
         </div>
     </div>
@@ -809,14 +850,15 @@
 
     <script>
         /* ==========================================
-           1. STATE, CONSTANTS & HASHTAGS
+           1. STATE, CONSTANTS & INITIALIZATION
         ========================================== */
         const EMOJI_AVATARS = ['👨', '👩', '👦', '👧', '👴', '👵', '👶', '🧔', '👱‍♀️', '🦸‍♂️'];
+        const MONTHS_UK = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
         
         const DEFAULT_SERIOUS_TAGS = ['#аналізи', '#кров', '#рентген', '#УЗД', '#рецепт', '#педіатр', '#стоматолог', '#щеплення', '#профогляд', '#виписка', '#кардіолог', '#ЛОР'];
         const DEFAULT_FUNNY_TAGS = ['#самолікування', '#продуло', '#психосоматика', '#вікове', '#іпохондрія', '#золота_аптека', '#хруснуло_в_спині', '#дитячий_садок'];
 
-        let dbData = { members: [], visits: [], medications: [], cabinet: [] };
+        let dbData = { members: [], visits: [], medications: [], cabinet: [], reminders: [] };
         let appSettings = JSON.parse(localStorage.getItem('med_pro_settings') || JSON.stringify({
             theme: 'light',
             customTags: [],
@@ -826,16 +868,114 @@
             gdriveToken: ''
         }));
 
+        let currentActiveTab = 'members';
         let selectedMemberAvatar = '👨';
         let currentVisitMedia = [];
         let currentVisitAudio = [];
         let mediaRecorder = null;
         let audioChunks = [];
+        let alarmAudioInterval = null;
 
         document.getElementById('medTrackerDate').value = new Date().toISOString().split('T')[0];
 
+        // Populate Birthdate & Expiry Dropdowns so they ALWAYS work reliably on Android WebView
+        function initDateDropdowns() {
+            let daySel = document.getElementById('mBirthDay');
+            let monthSel = document.getElementById('mBirthMonth');
+            let yearSel = document.getElementById('mBirthYear');
+
+            daySel.innerHTML = '<option value="">День</option>' + Array.from({length: 31}, (_, i) => {
+                let d = String(i + 1).padStart(2, '0');
+                return `<option value="${d}">${i + 1}</option>`;
+            }).join('');
+
+            monthSel.innerHTML = '<option value="">Місяць</option>' + MONTHS_UK.map((m, i) => {
+                let mv = String(i + 1).padStart(2, '0');
+                return `<option value="${mv}">${m}</option>`;
+            }).join('');
+
+            let curYear = new Date().getFullYear();
+            let yearsHtml = '<option value="">Рік</option>';
+            for (let y = curYear; y >= 1925; y--) {
+                yearsHtml += `<option value="${y}">${y}</option>`;
+            }
+            yearSel.innerHTML = yearsHtml;
+
+            // Cabinet Expiry Month/Year
+            let cabM = document.getElementById('cabExpMonth');
+            let cabY = document.getElementById('cabExpYear');
+            cabM.innerHTML = MONTHS_UK.map((m, i) => `<option value="${String(i+1).padStart(2,'0')}">${String(i+1).padStart(2,'0')} - ${m}</option>`).join('');
+            let cabYHtml = '';
+            for (let y = curYear - 2; y <= curYear + 10; y++) {
+                cabYHtml += `<option value="${y}">${y}</option>`;
+            }
+            cabY.innerHTML = cabYHtml;
+        }
+        initDateDropdowns();
+
+        // Force Android native date picker to open on tap anywhere in input
+        function triggerDatePicker(inputId) {
+            let el = document.getElementById(inputId);
+            if (el && typeof el.showPicker === 'function') {
+                try { el.showPicker(); } catch (e) {}
+            }
+        }
+
         /* ==========================================
-           2. INDEXED-DB ENGINE (UNLIMITED STORAGE)
+           2. ANDROID BACK GESTURE / BUTTON HANDLER
+        ========================================== */
+        function isAnyModalOpen() {
+            let modals = document.querySelectorAll('.modal');
+            for (let m of modals) {
+                if (m.style.display === 'flex' || m.style.display === 'block') return true;
+            }
+            return false;
+        }
+
+        function pushModalState() {
+            if (window.history && window.history.pushState) {
+                window.history.pushState({ modalOpen: true }, '');
+            }
+        }
+
+        // Browser / WebView History Popstate (Swipe Back Gesture on Android)
+        window.addEventListener('popstate', function(e) {
+            if (isAnyModalOpen()) {
+                closeModals(true);
+                return;
+            }
+            if (currentActiveTab !== 'members') {
+                switchTab('members', true);
+                window.history.pushState({ tab: 'members' }, '');
+            }
+        });
+
+        // Cordova Native Backbutton Event
+        document.addEventListener('backbutton', function(e) {
+            if (isAnyModalOpen()) {
+                e.preventDefault();
+                closeModals(true);
+            } else if (currentActiveTab !== 'members') {
+                e.preventDefault();
+                switchTab('members', true);
+            } else {
+                if (navigator.app && navigator.app.exitApp) {
+                    navigator.app.exitApp();
+                }
+            }
+        }, false);
+
+        // Backdrop click on modals also closes them smoothly
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal && modal.id !== 'confirmModal' && modal.id !== 'alarmPopupModal') {
+                    closeModals();
+                }
+            });
+        });
+
+        /* ==========================================
+           3. INDEXED-DB ENGINE
         ========================================== */
         const DB_NAME = 'FamilyMedProDB';
         const DB_VERSION = 1;
@@ -854,10 +994,7 @@
                     idb = e.target.result;
                     loadFromIDB().then(resolve);
                 };
-                request.onerror = function(e) {
-                    console.error("IndexedDB error:", e);
-                    resolve();
-                };
+                request.onerror = () => resolve();
             });
         }
 
@@ -871,11 +1008,12 @@
                         dbData = req.result;
                         if (!dbData.medications) dbData.medications = [];
                         if (!dbData.cabinet) dbData.cabinet = [];
+                        if (!dbData.reminders) dbData.reminders = [];
                         resolve();
                     } else {
                         let oldMembers = JSON.parse(localStorage.getItem('med_members') || '[]');
                         let oldVisits = JSON.parse(localStorage.getItem('med_visits') || '[]');
-                        dbData = { members: oldMembers, visits: oldVisits, medications: [], cabinet: [] };
+                        dbData = { members: oldMembers, visits: oldVisits, medications: [], cabinet: [], reminders: [] };
                         saveToIDB().then(resolve);
                     }
                 };
@@ -902,7 +1040,7 @@
         }
 
         /* ==========================================
-           3. UI HELPERS: TOASTS, CONFIRM, THEME, AGE
+           4. UI HELPERS: TOASTS, CONFIRM, THEME, AGE
         ========================================== */
         function showToast(message, type = 'success') {
             let container = document.getElementById('toast-container');
@@ -921,6 +1059,7 @@
 
         let confirmCallback = null;
         function askConfirm(title, message, onYes) {
+            pushModalState();
             document.getElementById('confirmTitle').innerText = title;
             document.getElementById('confirmMessage').innerText = message;
             confirmCallback = onYes;
@@ -957,6 +1096,7 @@
         function calculateAge(birthDateStr) {
             if (!birthDateStr) return '';
             let birth = new Date(birthDateStr);
+            if (isNaN(birth.getTime())) return '';
             let now = new Date();
             let years = now.getFullYear() - birth.getFullYear();
             let months = now.getMonth() - birth.getMonth();
@@ -996,9 +1136,14 @@
         }
 
         /* ==========================================
-           4. NAVIGATION & TAG CHIPS
+           5. NAVIGATION & AUTO-CLEAR SEARCH
         ========================================== */
-        function switchTab(tabName) {
+        function switchTab(tabName, fromBackGesture = false) {
+            currentActiveTab = tabName;
+            if (!fromBackGesture && window.history && window.history.pushState) {
+                window.history.pushState({ tab: tabName }, '');
+            }
+
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
             
@@ -1008,9 +1153,23 @@
             }
             document.getElementById('tab-' + tabName).style.display = 'block';
 
-            if (tabName === 'visits') { updateDropdowns(); renderQuickFilterTags(); renderVisits(); }
+            // Auto-reset search query when switching back to Journal or Docs so user sees the full list!
+            if (tabName === 'visits') {
+                document.getElementById('searchQuery').value = '';
+                document.getElementById('clearSearchBtn').style.display = 'none';
+                document.getElementById('filterMember').value = '';
+                document.getElementById('filterType').value = '';
+                updateDropdowns();
+                renderQuickFilterTags();
+                renderVisits();
+            }
             if (tabName === 'meds') { updateDropdowns(); renderMeds(); renderCabinet(); }
-            if (tabName === 'docs') { updateDropdowns(); renderDocQuickTags(); renderDocumentsArchive(); }
+            if (tabName === 'docs') {
+                document.getElementById('docSearchQuery').value = '';
+                updateDropdowns();
+                renderDocQuickTags();
+                renderDocumentsArchive();
+            }
             if (tabName === 'timeline') { updateDropdowns(); renderTimeline(); }
             if (tabName === 'analytics') { updateDropdowns(); renderAnalytics(); }
             if (tabName === 'settings') { renderCustomTagsManage(); updateBackupSettingsUI(); }
@@ -1023,6 +1182,25 @@
             document.getElementById('med-sub-cabinet').style.display = sub === 'cabinet' ? 'block' : 'none';
             if (sub === 'tracker') renderMeds();
             else renderCabinet();
+        }
+
+        function onSearchInput() {
+            let val = document.getElementById('searchQuery').value;
+            document.getElementById('clearSearchBtn').style.display = val.length > 0 ? 'flex' : 'none';
+            renderVisits();
+        }
+
+        function clearSearchInput() {
+            document.getElementById('searchQuery').value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            renderVisits();
+        }
+
+        function setSearchQuery(q) {
+            document.getElementById('searchQuery').value = q;
+            document.getElementById('clearSearchBtn').style.display = q ? 'flex' : 'none';
+            saveSearchQuery(q);
+            renderVisits();
         }
 
         function getAllTags() {
@@ -1063,14 +1241,8 @@
             ).join('');
         }
 
-        function setSearchQuery(q) {
-            document.getElementById('searchQuery').value = q;
-            saveSearchQuery(q);
-            renderVisits();
-        }
-
         /* ==========================================
-           5. SEARCH HISTORY & CUSTOM TAGS
+           6. SEARCH HISTORY & CUSTOM TAGS
         ========================================== */
         function saveSearchQuery(q) {
             q = q.trim();
@@ -1135,7 +1307,7 @@
         }
 
         /* ==========================================
-           6. MEMBERS MANAGEMENT & AVATARS
+           7. MEMBERS MANAGEMENT & RELIABLE BIRTHDATE
         ========================================== */
         function renderEmojiPicker() {
             let container = document.getElementById('emojiPicker');
@@ -1160,13 +1332,23 @@
         }
 
         function openMemberModal(id = null) {
+            pushModalState();
             document.getElementById('mEditId').value = id || '';
             document.getElementById('mPhotoInput').value = '';
             if (id) {
                 let m = dbData.members.find(x => x.id === id);
                 document.getElementById('memberModalTitle').innerText = '✏️ Редагувати профіль';
                 document.getElementById('mName').value = m.name;
-                document.getElementById('mBirth').value = m.birthDate || '';
+                if (m.birthDate && m.birthDate.includes('-')) {
+                    let parts = m.birthDate.split('-');
+                    document.getElementById('mBirthYear').value = parts[0] || '';
+                    document.getElementById('mBirthMonth').value = parts[1] || '';
+                    document.getElementById('mBirthDay').value = parts[2] || '';
+                } else {
+                    document.getElementById('mBirthYear').value = '';
+                    document.getElementById('mBirthMonth').value = '';
+                    document.getElementById('mBirthDay').value = '';
+                }
                 document.getElementById('mBlood').value = m.bloodGroup || '';
                 document.getElementById('mAllergies').value = m.allergies || '';
                 document.getElementById('mChronic').value = m.chronic || '';
@@ -1174,7 +1356,9 @@
             } else {
                 document.getElementById('memberModalTitle').innerText = '👤 Новий член родини';
                 document.getElementById('mName').value = '';
-                document.getElementById('mBirth').value = '';
+                document.getElementById('mBirthYear').value = '';
+                document.getElementById('mBirthMonth').value = '';
+                document.getElementById('mBirthDay').value = '';
                 document.getElementById('mBlood').value = '';
                 document.getElementById('mAllergies').value = '';
                 document.getElementById('mChronic').value = '';
@@ -1190,10 +1374,15 @@
             let name = document.getElementById('mName').value.trim();
             if (!name) { showToast('Будь ласка, введіть ім\'я!', 'warning'); return; }
             
+            let y = document.getElementById('mBirthYear').value;
+            let m = document.getElementById('mBirthMonth').value;
+            let d = document.getElementById('mBirthDay').value;
+            let birthDateStr = (y && m && d) ? `${y}-${m}-${d}` : (y ? `${y}-01-01` : '');
+
             let memberObj = {
                 id: editId || Date.now().toString(),
                 name: name,
-                birthDate: document.getElementById('mBirth').value,
+                birthDate: birthDateStr,
                 bloodGroup: document.getElementById('mBlood').value,
                 allergies: document.getElementById('mAllergies').value,
                 chronic: document.getElementById('mChronic').value,
@@ -1224,6 +1413,7 @@
         }
 
         function openEmergencyCard(memberId) {
+            pushModalState();
             let m = dbData.members.find(x => x.id === memberId);
             if (!m) return;
             let memberVisits = dbData.visits.filter(v => v.memberId === memberId).sort((a,b) => new Date(b.date) - new Date(a.date));
@@ -1251,14 +1441,178 @@
                         ${recentDiagnoses || '<li>Записів поки немає</li>'}
                     </ul>
                 </div>
-                <button class="btn" onclick="closeModals()">Закрити картку</button>
+                <button class="btn" onclick="closeModals()">Закрити картку (Назад)</button>
             `;
             document.getElementById('emergencyModal').style.display = 'flex';
         }
 
         /* ==========================================
-           7. MEDICATION TRACKER & HOME CABINET
+           8. MEDICATION TRACKER & NEXT DOSE REMINDERS
         ========================================== */
+        function playAlarmSound() {
+            try {
+                let ctx = new (window.AudioContext || window.webkitAudioContext)();
+                let osc = ctx.createOscillator();
+                let gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {}
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        function setMedReminderHours(medId, hours) {
+            requestNotificationPermission();
+            let med = (dbData.medications || []).find(x => x.id === medId);
+            if (!med) return;
+            let member = dbData.members.find(m => m.id === med.memberId);
+            let memberName = member ? member.name : '';
+
+            let targetTime = Date.now() + (hours * 3600 * 1000);
+            let timeStr = new Date(targetTime).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+
+            if (!dbData.reminders) dbData.reminders = [];
+            // Replace existing reminder for this med
+            dbData.reminders = dbData.reminders.filter(r => r.medId !== medId);
+            dbData.reminders.push({
+                id: Date.now().toString(),
+                medId: medId,
+                medName: `${med.name} (${med.dose})`,
+                memberName: memberName,
+                targetTime: targetTime,
+                timeStr: timeStr
+            });
+            saveToIDB();
+            renderMeds();
+            showToast(`⏰ Нагадування встановлено на ${timeStr} (через ${hours} год)`);
+        }
+
+        function setMedReminderExactTime(medId, timeVal) {
+            if (!timeVal) return;
+            requestNotificationPermission();
+            let med = (dbData.medications || []).find(x => x.id === medId);
+            if (!med) return;
+            let member = dbData.members.find(m => m.id === med.memberId);
+            let memberName = member ? member.name : '';
+
+            let [hh, mm] = timeVal.split(':').map(Number);
+            let now = new Date();
+            let target = new Date();
+            target.setHours(hh, mm, 0, 0);
+            if (target.getTime() <= now.getTime()) {
+                target.setDate(target.getDate() + 1); // Tomorrow if time already passed today
+            }
+
+            if (!dbData.reminders) dbData.reminders = [];
+            dbData.reminders = dbData.reminders.filter(r => r.medId !== medId);
+            dbData.reminders.push({
+                id: Date.now().toString(),
+                medId: medId,
+                medName: `${med.name} (${med.dose})`,
+                memberName: memberName,
+                targetTime: target.getTime(),
+                timeStr: timeVal
+            });
+            saveToIDB();
+            renderMeds();
+            showToast(`⏰ Нагадування встановлено на ${timeVal}!`);
+        }
+
+        function cancelMedReminder(medId) {
+            dbData.reminders = (dbData.reminders || []).filter(r => r.medId !== medId);
+            saveToIDB();
+            renderMeds();
+            showToast('Нагадування скасовано', 'warning');
+        }
+
+        // Open Android System Calendar/Alarm Reminder so OS guarantees wakeup
+        function openSystemReminder(medId) {
+            let med = (dbData.medications || []).find(x => x.id === medId);
+            if (!med) return;
+            let member = dbData.members.find(m => m.id === med.memberId);
+            let rem = (dbData.reminders || []).find(r => r.medId === medId);
+            let startTime = rem ? new Date(rem.targetTime) : new Date(Date.now() + 4 * 3600 * 1000);
+            let endTime = new Date(startTime.getTime() + 15 * 60 * 1000);
+
+            let fmt = d => d.toISOString().replace(/-|:|\.\d+/g, '');
+            let title = encodeURIComponent(`💊 Прийняти: ${med.name} (${med.dose}) - ${member ? member.name : ''}`);
+            let details = encodeURIComponent(`Правило: ${med.rule}. ${med.notes || ''}`);
+            let url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${fmt(startTime)}/${fmt(endTime)}`;
+            window.open(url, '_blank');
+        }
+
+        // Background checker every 10 seconds for due pill reminders
+        setInterval(() => {
+            if (!dbData.reminders || dbData.reminders.length === 0) return;
+            let now = Date.now();
+            let triggered = false;
+            dbData.reminders.forEach(r => {
+                if (!r.fired && now >= r.targetTime) {
+                    r.fired = true;
+                    triggered = true;
+                    triggerAlarmPopup(r);
+                }
+            });
+            if (triggered) {
+                dbData.reminders = dbData.reminders.filter(r => !r.fired);
+                saveToIDB();
+                renderMeds();
+            }
+        }, 5000);
+
+        function triggerAlarmPopup(rem) {
+            pushModalState();
+            document.getElementById('alarmPopupText').innerText = `${rem.memberName ? rem.memberName + ': ' : ''}${rem.medName}`;
+            document.getElementById('alarmPopupModal').style.display = 'flex';
+            playAlarmSound();
+            if (navigator.vibrate) navigator.vibrate([500, 300, 500, 300, 500]);
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification('⏰ Час прийняти ліки!', {
+                        body: `${rem.memberName}: ${rem.medName}`
+                    });
+                } catch (e) {}
+            }
+            if (alarmAudioInterval) clearInterval(alarmAudioInterval);
+            alarmAudioInterval = setInterval(playAlarmSound, 2500);
+        }
+
+        function stopAlarmAndClose() {
+            if (alarmAudioInterval) {
+                clearInterval(alarmAudioInterval);
+                alarmAudioInterval = null;
+            }
+            document.getElementById('alarmPopupModal').style.display = 'none';
+        }
+
+        function renderActiveRemindersBanner() {
+            let banner = document.getElementById('activeRemindersBanner');
+            let list = dbData.reminders || [];
+            if (list.length === 0) {
+                banner.style.display = 'none';
+                return;
+            }
+            banner.style.display = 'block';
+            banner.style.background = 'var(--purple-light)';
+            banner.style.borderColor = 'var(--purple)';
+            banner.innerHTML = `<div style="font-size:0.82rem; font-weight:700; color:var(--purple); margin-bottom:4px;">🔔 Активні таймери прийому ліків:</div>` +
+                list.map(r => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:4px 0;">
+                        <span>⏰ <b>${r.timeStr}</b> — ${r.medName} (${r.memberName})</span>
+                        <button class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:0.7rem;" onclick="cancelMedReminder('${r.medId}')">✖</button>
+                    </div>
+                `).join('');
+        }
+
         function shiftMedDate(days) {
             let el = document.getElementById('medTrackerDate');
             let cur = el.value ? new Date(el.value) : new Date();
@@ -1269,6 +1623,7 @@
 
         function openMedModal(id = null) {
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
+            pushModalState();
             let select = document.getElementById('medMemberId');
             select.innerHTML = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
             
@@ -1353,7 +1708,7 @@
                 showToast(`Відмітку знято (${slotName})`, 'warning');
             } else {
                 med.logs[key] = true;
-                showToast(`Прийнято: ${med.name} (${slotName}) ✅`);
+                showToast(`Прийнято: ${med.name} (${slotName}) ✅ Встановіть таймер наступного прийому нижче!`);
             }
             saveToIDB();
             renderMeds();
@@ -1371,6 +1726,7 @@
         function deleteMedCourse(medId) {
             askConfirm('Видалити курс ліків?', 'Ви впевнені, що хочете видалити цей препарат та історію його прийому?', () => {
                 dbData.medications = (dbData.medications || []).filter(x => x.id !== medId);
+                dbData.reminders = (dbData.reminders || []).filter(r => r.medId !== medId);
                 saveToIDB();
                 renderMeds();
                 showToast('Курс ліків видалено', 'danger');
@@ -1410,6 +1766,8 @@
                 let takenCount = Object.keys(med.logs || {}).length;
                 let progressPct = Math.min(100, Math.round((takenCount / totalScheduledDoses) * 100));
 
+                let activeRem = (dbData.reminders || []).find(r => r.medId === med.id);
+
                 let dosesHtml = (med.slots || []).map(slot => {
                     let isTaken = med.logs && med.logs[`${selectedDate}_${slot}`];
                     return `
@@ -1434,8 +1792,24 @@
                         ${med.notes ? `<p><b>Примітка:</b> ${med.notes}</p>` : ''}
 
                         <div style="margin-top:8px;">
-                            <div style="font-size:0.75rem; font-weight:700; color:var(--text-light);">ВІДМІТИТИ ПРИЙОМ НА ${selectedDate}:</div>
+                            <div style="font-size:0.75rem; font-weight:700; color:var(--text-light);">1. ВІДМІТИТИ ПРИЙОМ НА ${selectedDate}:</div>
                             <div class="dose-grid">${dosesHtml}</div>
+                        </div>
+
+                        <!-- NEXT DOSE REMINDER PANEL -->
+                        <div class="reminder-panel">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                                <span style="font-size:0.78rem; font-weight:700; color:var(--purple);">🔔 2. НАГАДАТИ ПРО НАСТУПНИЙ ПРИЙОМ:</span>
+                                ${activeRem ? `<span class="badge badge-success">⏰ Встановлено на ${activeRem.timeStr} <b onclick="cancelMedReminder('${med.id}')" style="cursor:pointer; margin-left:4px;">✖</b></span>` : ''}
+                            </div>
+                            <div style="margin-top:6px; display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                                <span class="timer-chip" onclick="setMedReminderHours('${med.id}', 4)">+4 год</span>
+                                <span class="timer-chip" onclick="setMedReminderHours('${med.id}', 6)">+6 год</span>
+                                <span class="timer-chip" onclick="setMedReminderHours('${med.id}', 8)">+8 год</span>
+                                <span class="timer-chip" onclick="setMedReminderHours('${med.id}', 12)">+12 год</span>
+                                <input type="time" onchange="setMedReminderExactTime('${med.id}', this.value)" style="width:auto; padding:4px 8px; margin:0; font-size:0.8rem; height:30px;">
+                                <span class="timer-chip" style="background:var(--purple-light);" onclick="openSystemReminder('${med.id}')">📅 У календар телефона</span>
+                            </div>
                         </div>
 
                         <div style="margin-top:12px;">
@@ -1462,7 +1836,6 @@
             let parts = expiryMonthStr.split('-');
             let year = parseInt(parts[0]);
             let month = parseInt(parts[1]);
-            // Last day of the specified expiry month
             let expDate = new Date(year, month, 0, 23, 59, 59);
             let now = new Date();
             let diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
@@ -1476,13 +1849,19 @@
         }
 
         function openCabinetModal(id = null) {
+            pushModalState();
             document.getElementById('cabEditId').value = id || '';
+            let nextYear = new Date().getFullYear() + 1;
             if (id) {
                 let item = (dbData.cabinet || []).find(x => x.id === id);
                 document.getElementById('cabModalTitle').innerText = '✏️ Редагувати препарат в аптечці';
                 document.getElementById('cabName').value = item.name;
                 document.getElementById('cabCategory').value = item.category || '🌡 Жарознижувальне / Застуда';
-                document.getElementById('cabExpiry').value = item.expiry || '';
+                if (item.expiry && item.expiry.includes('-')) {
+                    let [ey, em] = item.expiry.split('-');
+                    document.getElementById('cabExpYear').value = ey;
+                    document.getElementById('cabExpMonth').value = em;
+                }
                 document.getElementById('cabQty').value = item.qty || '';
                 document.getElementById('cabLocation').value = item.location || '';
                 document.getElementById('cabNotes').value = item.notes || '';
@@ -1490,8 +1869,8 @@
                 document.getElementById('cabModalTitle').innerText = '🧰 Додати ліки в аптечку';
                 document.getElementById('cabName').value = '';
                 document.getElementById('cabCategory').value = '🌡 Жарознижувальне / Застуда';
-                let nextYear = new Date().getFullYear() + 1;
-                document.getElementById('cabExpiry').value = `${nextYear}-06`;
+                document.getElementById('cabExpYear').value = nextYear.toString();
+                document.getElementById('cabExpMonth').value = '06';
                 document.getElementById('cabQty').value = '1 упаковка';
                 document.getElementById('cabLocation').value = 'Головна аптечка';
                 document.getElementById('cabNotes').value = '';
@@ -1506,11 +1885,13 @@
             let editId = document.getElementById('cabEditId').value;
             if (!dbData.cabinet) dbData.cabinet = [];
 
+            let expStr = `${document.getElementById('cabExpYear').value}-${document.getElementById('cabExpMonth').value}`;
+
             let itemObj = {
                 id: editId || Date.now().toString(),
                 name: name,
                 category: document.getElementById('cabCategory').value,
-                expiry: document.getElementById('cabExpiry').value,
+                expiry: expStr,
                 qty: document.getElementById('cabQty').value.trim(),
                 location: document.getElementById('cabLocation').value.trim(),
                 notes: document.getElementById('cabNotes').value.trim()
@@ -1567,7 +1948,6 @@
                 return matchQuery && matchCat && matchExp;
             });
 
-            // Sort by expiry date ascending (soonest/expired first)
             filtered.sort((a, b) => (a.expiry || '9999-99').localeCompare(b.expiry || '9999-99'));
 
             let container = document.getElementById('cabinet-list');
@@ -1600,10 +1980,11 @@
         }
 
         /* ==========================================
-           8. VISITS, HOME ILLNESSES, MEDIA & AUDIO
+           9. VISITS, HOME ILLNESSES, MEDIA & AUDIO
         ========================================== */
         function openVisitModal(id = null) {
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
+            pushModalState();
             let select = document.getElementById('vMemberId');
             select.innerHTML = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
             
@@ -1648,6 +2029,7 @@
 
         function openHomeIllnessModal(id = null) {
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
+            pushModalState();
             let select = document.getElementById('hMemberId');
             select.innerHTML = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
             
@@ -1879,7 +2261,7 @@
         }
 
         /* ==========================================
-           9. RENDERING ALL VIEWS & ANALYTICS
+           10. RENDERING ALL VIEWS & ANALYTICS
         ========================================== */
         function updateDropdowns() {
             let memberOptions = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
@@ -1965,7 +2347,7 @@
 
             let vDiv = document.getElementById('visits-list');
             if (filtered.length === 0) {
-                vDiv.innerHTML = '<div class="empty-state">🔍 Записів не знайдено</div>';
+                vDiv.innerHTML = `<div class="empty-state">🔍 Записів не знайдено ${query ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="clearSearchInput()">Показати всі записи</button>` : ''}</div>`;
                 return;
             }
 
@@ -2215,16 +2597,17 @@
         }
 
         /* ==========================================
-           10. CLOUD BACKUP, SCHEDULE & GOOGLE DRIVE
+           11. CLOUD BACKUP, SCHEDULE & GOOGLE DRIVE
         ========================================== */
         function buildBackupPayload() {
             return JSON.stringify({
-                version: 4,
+                version: 5,
                 exportedAt: new Date().toISOString(),
                 members: dbData.members,
                 visits: dbData.visits,
                 medications: dbData.medications || [],
                 cabinet: dbData.cabinet || [],
+                reminders: dbData.reminders || [],
                 settings: appSettings
             });
         }
@@ -2284,7 +2667,6 @@
             banner.style.display = diffDays >= intervalDays ? 'flex' : 'none';
         }
 
-        // Native Web Share API -> Directly sends file to Google Drive app on Android!
         async function shareBackupToCloud() {
             let jsonStr = buildBackupPayload();
             let fileName = `FamilyMed_Backup_${new Date().toISOString().split('T')[0]}.json`;
@@ -2304,7 +2686,6 @@
                     if (err.name === 'AbortError') return;
                 }
             }
-            // Fallback to local download if Web Share is not supported on PC browser
             exportData();
         }
 
@@ -2366,13 +2747,14 @@
                         dbData.visits = imported.visits;
                         dbData.medications = imported.medications || [];
                         dbData.cabinet = imported.cabinet || [];
+                        dbData.reminders = imported.reminders || [];
                         if (imported.settings) {
                             appSettings = { ...appSettings, ...imported.settings };
                             saveSettings();
                             applyTheme();
                         }
                         saveToIDB();
-                        showToast('Базу даних (включно з аптечкою) успішно відновлено! 🎉');
+                        showToast('Базу даних успішно відновлено! 🎉');
                     } else {
                         showToast('Невірний формат файлу резервної копії', 'danger');
                     }
@@ -2384,9 +2766,10 @@
         }
 
         /* ==========================================
-           11. MEDIA VIEWER & MODALS
+           12. MEDIA VIEWER & MODALS
         ========================================== */
         function openMediaViewer(mediaObj) {
+            pushModalState();
             let container = document.getElementById('mediaViewerContainer');
             if (mediaObj.type === 'video') {
                 container.innerHTML = `<video controls autoplay style="max-width:100%; max-height:82vh; border-radius:12px;" src="${mediaObj.data}"></video>`;
@@ -2410,17 +2793,21 @@
 
         function closeMediaViewer(e) {
             if (e.target.id === 'mediaViewerModal') {
-                document.getElementById('mediaViewerModal').style.display = 'none';
-                document.getElementById('mediaViewerContainer').innerHTML = '';
+                closeModals();
             }
         }
 
         function openHelpModal() {
+            pushModalState();
             document.getElementById('helpModal').style.display = 'flex';
         }
 
-        function closeModals() {
+        function closeModals(fromPopState = false) {
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.getElementById('mediaViewerContainer').innerHTML = '';
+            if (!fromPopState && window.history && window.history.state && window.history.state.modalOpen) {
+                try { window.history.back(); } catch(e) {}
+            }
         }
 
         function renderAll() {
@@ -2429,9 +2816,13 @@
             renderQuickFilterTags();
             updateBackupSettingsUI();
             checkBackupSchedule();
+            renderActiveRemindersBanner();
         }
 
         applyTheme();
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({ tab: 'members' }, '');
+        }
         initDB().then(() => {
             renderAll();
         });
