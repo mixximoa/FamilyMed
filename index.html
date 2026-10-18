@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Сімейна Медкартка</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+        header { background: var(--primary); color: white; padding: 16px; text-align: center; font-size: 1.25rem; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+        
+        /* Tabs */
+        .tabs { display: flex; background: white; border-bottom: 1px solid var(--border); overflow-x: auto; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--text-light); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* Cards */
+        .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .card h3 { font-size: 1.1rem; margin-bottom: 6px; color: var(--primary-dark); }
+        .card p { font-size: 0.9rem; color: var(--text-light); margin-bottom: 4px; }
+        
+        /* Buttons */
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; text-align: center; }
+        .btn:active { background: var(--primary-dark); }
+        .btn-danger { background: var(--danger); }
+        .btn-secondary { background: #64748b; }
+
+        /* Forms */
+        input, select, textarea { width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: #fff; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-light); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-end; }
+        .modal-content { background: white; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 20px; border-radius: 20px 20px 0 0; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .badge { display: inline-block; padding: 2px 8px; font-size: 0.75rem; font-weight: bold; background: #e0f2fe; color: var(--primary); border-radius: 4px; margin-right: 4px; }
+        .empty-state { text-align: center; color: var(--text-light); padding: 40px 0; }
+        .actions-row { display: flex; gap: 8px; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+    <header>🩺 Сімейна Медкартка</header>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('members')">Сім'я</div>
+        <div class="tab" onclick="switchTab('visits')">Візити та Лікарі</div>
+        <div class="tab" onclick="switchTab('settings')">Дані та Backup</div>
+    </div>
+
+    <div class="container">
+        <!-- TAB 1: MEMBERS -->
+        <div id="tab-members" class="tab-content">
+            <button class="btn" onclick="openMemberModal()">+ Додати члена родини</button>
+            <div id="members-list" style="margin-top: 16px;"></div>
+        </div>
+
+        <!-- TAB 2: VISITS -->
+        <div id="tab-visits" class="tab-content" style="display: none;">
+            <button class="btn" onclick="openVisitModal()">+ Додати запис про візит</button>
+            <div id="visits-list" style="margin-top: 16px;"></div>
+        </div>
+
+        <!-- TAB 3: SETTINGS / BACKUP -->
+        <div id="tab-settings" class="tab-content" style="display: none;">
+            <div class="card">
+                <h3>Резервне копіювання</h3>
+                <p>Збережіть усі дані (профілі, візити, фотографії) у файл резервної копії або відновіть їх із файлу.</p>
+                <button class="btn" onclick="exportData()">Експортувати дані (Backup)</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" style="margin-top: 8px;">Імпортувати дані</button>
+                <input type="file" id="importFile" style="display: none;" onchange="importData(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- MEMBER MODAL -->
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <h3>Новий член родини</h3>
+            <label>ПІБ / Ім'я</label>
+            <input type="text" id="mName" placeholder="напр. Іван Петренко">
+            <label>Дата народження</label>
+            <input type="date" id="mBirth">
+            <label>Група крові</label>
+            <input type="text" id="mBlood" placeholder="напр. 2+ (A+)">
+            <label>Алергії та особливі застереження</label>
+            <textarea id="mAllergies" placeholder="напр. Алергія на пеніцилін"></textarea>
+            <button class="btn" onclick="saveMember()">Зберегти</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+        </div>
+    </div>
+
+    <!-- VISIT MODAL -->
+    <div id="visitModal" class="modal">
+        <div class="modal-content">
+            <h3>Запис про візит до лікаря</h3>
+            <label>Член родини</label>
+            <select id="vMemberId"></select>
+            <label>Дата візиту</label>
+            <input type="date" id="vDate">
+            <label>Спеціалізація лікаря / ПІБ</label>
+            <input type="text" id="vDoctor" placeholder="напр. Кардіолог Коваленко С.М.">
+            <label>Клініка / Лікарня</label>
+            <input type="text" id="vClinic" placeholder="напр. Поліклініка №2">
+            <label>Скарги / Причина звернення</label>
+            <textarea id="vReason" placeholder="Біль у грудях, тиск..."></textarea>
+            <label>Поставлений діагноз</label>
+            <input type="text" id="vDiagnosis" placeholder="Гіпертонія І ступеня">
+            <label>Призначене лікування / Препарати</label>
+            <textarea id="vTreatment" placeholder="Таблетки такі-то..."></textarea>
+            
+            <label>Фото виписки / рентгену / аналізу</label>
+            <input type="file" id="vFile" accept="image/*">
+            
+            <button class="btn" onclick="saveVisit()">Зберегти візит</button>
+            <button class="btn btn-secondary" onclick="closeModals()">Скасувати</button>
+        </div>
+    </div>
+
+    <script>
+        // Database simulation using localStorage (IndexedDB wrapper or simple robust JSON storage)
+        let db = {
+            members: JSON.parse(localStorage.getItem('med_members') || '[]'),
+            visits: JSON.parse(localStorage.getItem('med_visits') || '[]')
+        };
+
+        function saveData() {
+            localStorage.setItem('med_members', JSON.stringify(db.members));
+            localStorage.setItem('med_visits', JSON.stringify(db.visits));
+            renderAll();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            
+            if(tabName === 'members') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('tab-members').style.display = 'block';
+            } else if(tabName === 'visits') {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('tab-visits').style.display = 'block';
+            } else if(tabName === 'settings') {
+                document.querySelectorAll('.tab')[2].classList.add('active');
+                document.getElementById('tab-settings').style.display = 'block';
+            }
+        }
+
+        function openMemberModal() {
+            document.getElementById('mName').value = '';
+            document.getElementById('mBirth').value = '';
+            document.getElementById('mBlood').value = '';
+            document.getElementById('mAllergies').value = '';
+            document.getElementById('memberModal').style.display = 'flex';
+        }
+
+        function openVisitModal() {
+            if(db.members.length === 0) {
+                alert('Спочатку додайте хоча б одного члена родини!');
+                return;
+            }
+            let select = document.getElementById('vMemberId');
+            select.innerHTML = db.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            
+            document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('vDoctor').value = '';
+            document.getElementById('vClinic').value = '';
+            document.getElementById('vReason').value = '';
+            document.getElementById('vDiagnosis').value = '';
+            document.getElementById('vTreatment').value = '';
+            document.getElementById('vFile').value = '';
+            document.getElementById('visitModal').style.display = 'flex';
+        }
+
+        function closeModals() {
+            document.getElementById('memberModal').style.display = 'none';
+            document.getElementById('visitModal').style.display = 'none';
+        }
+
+        function saveMember() {
+            let name = document.getElementById('mName').value.trim();
+            if(!name) { alert('Введіть ім\'я!'); return; }
+            
+            let member = {
+                id: Date.now().toString(),
+                name: name,
+                birthDate: document.getElementById('mBirth').value,
+                bloodGroup: document.getElementById('mBlood').value,
+                allergies: document.getElementById('mAllergies').value
+            };
+            db.members.push(member);
+            saveData();
+            closeModals();
+        }
+
+        function saveVisit() {
+            let memberId = document.getElementById('vMemberId').value;
+            let doctor = document.getElementById('vDoctor').value.trim();
+            if(!doctor) { alert('Введіть лікаря!'); return; }
+
+            let fileInput = document.getElementById('vFile');
+            let fileData = null;
+
+            if(fileInput.files && fileInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    finishSaveVisit(memberId, e.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                finishSaveVisit(memberId, null);
+            }
+        }
+
+        function finishSaveVisit(memberId, fileData) {
+            let visit = {
+                id: Date.now().toString(),
+                memberId: memberId,
+                date: document.getElementById('vDate').value,
+                doctor: document.getElementById('vDoctor').value,
+                clinic: document.getElementById('vClinic').value,
+                reason: document.getElementById('vReason').value,
+                diagnosis: document.getElementById('vDiagnosis').value,
+                treatment: document.getElementById('vTreatment').value,
+                file: fileData
+            };
+            db.visits.push(visit);
+            saveData();
+            closeModals();
+        }
+
+        function deleteMember(id) {
+            if(confirm('Видалити члена родини та всі його записи?')) {
+                db.members = db.members.filter(m => m.id !== id);
+                db.visits = db.visits.filter(v => v.memberId !== id);
+                saveData();
+            }
+        }
+
+        function deleteVisit(id) {
+            if(confirm('Видалити цей запис?')) {
+                db.visits = db.visits.filter(v => v.id !== id);
+                saveData();
+            }
+        }
+
+        function renderAll() {
+            // Render Members
+            let mDiv = document.getElementById('members-list');
+            if(db.members.length === 0) {
+                mDiv.innerHTML = '<div class="empty-state">Список членів родини порожній</div>';
+            } else {
+                mDiv.innerHTML = db.members.map(m => `
+                    <div class="card">
+                        <h3>👤 ${m.name}</h3>
+                        <p><b>Дата народження:</b> ${m.birthDate || 'не вказано'}</p>
+                        <p><b>Група крові:</b> ${m.bloodGroup || 'не вказано'}</p>
+                        <p><b>Алергії:</b> <span style="color:var(--danger)">${m.allergies || 'немає'}</span></p>
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; width: auto;" onclick="deleteMember('${m.id}')">Видалити профіль</button>
+                    </div>
+                `).join('');
+            }
+
+            // Render Visits
+            let vDiv = document.getElementById('visits-list');
+            if(db.visits.length === 0) {
+                vDiv.innerHTML = '<div class="empty-state">Поки немає жодного запису про візити</div>';
+            } else {
+                // Sort by date desc
+                let sortedVisits = [...db.visits].sort((a,b) => new Date(b.date) - new Date(a.date));
+                vDiv.innerHTML = sortedVisits.map(v => {
+                    let member = db.members.find(m => m.id === v.memberId);
+                    let memberName = member ? member.name : 'Видалений профіль';
+                    return `
+                        <div class="card">
+                            <span class="badge">${v.date}</span>
+                            <span class="badge" style="background:#f1f5f9; color:var(--text);">${memberName}</span>
+                            <h3 style="margin-top:8px;">🩺 ${v.doctor}</h3>
+                            <p><b>Клініка:</b> ${v.clinic || 'не вказано'}</p>
+                            <p><b>Скарги:</b> ${v.reason || '—'}</p>
+                            <p><b>Діагноз:</b> <b>${v.diagnosis || '—'}</b></p>
+                            <p><b>Призначення:</b> ${v.treatment || '—'}</p>
+                            ${v.file ? `<div style="margin-top:8px;"><a href="${v.file}" target="_blank"><img src="${v.file}" style="max-width:100%; height:120px; object-fit:cover; border-radius:8px; border:1px solid var(--border);"></a></div>` : ''}
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.85rem; width: auto; margin-top: 10px;" onclick="deleteVisit('${v.id}')">Видалити запис</button>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function exportData() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "family_med_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            let file = event.target.files[0];
+            if(!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let imported = JSON.parse(e.target.result);
+                    if(imported.members && imported.visits) {
+                        db = imported;
+                        saveData();
+                        alert('Дані успішно відновлено!');
+                    } else {
+                        alert('Невірний формат файлу резервної копії.');
+                    }
+                } catch(err) {
+                    alert('Помилка читання файлу.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initial render
+        renderAll();
+    </script>
+</body>
+</html>
