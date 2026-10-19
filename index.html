@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Сімейна Медкартка PRO</title>
-    <!-- Підключення мосту Cordova для роботи нативних функцій Android -->
     <script src="cordova.js"></script>
     <style>
         :root {
@@ -49,14 +48,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; transition: background 0.2s, color 0.2s; }
         
-        /* Header */
         header { background: linear-gradient(135deg, #0284c7, #0f766e); color: white; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
         .header-title { font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
         .header-actions { display: flex; gap: 8px; }
         .icon-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .icon-btn:active { background: rgba(255,255,255,0.35); }
 
-        /* Navigation Tabs */
         .tabs { display: flex; background: var(--card-bg); border-bottom: 1px solid var(--border); overflow-x: auto; position: sticky; top: 64px; z-index: 90; scrollbar-width: none; }
         .tabs::-webkit-scrollbar { display: none; }
         .tab { flex: 1; min-width: 64px; padding: 10px 4px; text-align: center; font-size: 0.68rem; font-weight: 700; color: var(--text-light); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: 0.2s; }
@@ -65,26 +62,21 @@
 
         .container { padding: 14px; max-width: 650px; margin: 0 auto; }
 
-        /* Sub-navigation segmented control */
         .sub-tabs { display: flex; background: var(--card-bg); padding: 4px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 14px; }
         .sub-tab { flex: 1; text-align: center; padding: 9px 6px; font-size: 0.84rem; font-weight: 700; border-radius: 9px; cursor: pointer; color: var(--text-light); transition: 0.2s; }
         .sub-tab.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25); }
 
-        /* Cards */
         .card { background: var(--card-bg); border-radius: 16px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden; }
         .card h3 { font-size: 1.05rem; margin-bottom: 6px; color: var(--text); font-weight: 700; }
         .card p { font-size: 0.88rem; color: var(--text-light); margin-bottom: 5px; line-height: 1.4; }
         .card p b { color: var(--text); }
 
-        /* Backup Alert Banner */
         #backupDueBanner { display: none; background: linear-gradient(135deg, #f59e0b, #ea580c); color: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 10px; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25); }
 
-        /* Member Card Specific */
         .member-header { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
         .avatar-circle { width: 62px; height: 62px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; flex-shrink: 0; border: 2px solid var(--primary); overflow: hidden; object-fit: cover; }
         .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Buttons */
         .btn { background: var(--primary); color: white; border: none; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; margin-top: 8px; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.1s, opacity 0.2s; }
         .btn:active { transform: scale(0.98); opacity: 0.9; }
         .btn-danger { background: var(--danger); color: white; }
@@ -96,19 +88,16 @@
         .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
         .btn-sm { padding: 7px 12px; font-size: 0.78rem; border-radius: 8px; width: auto; margin-top: 0; }
 
-        /* Forms */
         input, select, textarea { width: 100%; padding: 11px 12px; margin: 5px 0 12px 0; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
         label { font-size: 0.82rem; font-weight: 700; color: var(--text-light); display: block; margin-top: 4px; }
         .form-row { display: flex; gap: 8px; }
         .form-row > div { flex: 1; }
 
-        /* Search Input with Clear Button */
         .input-clear-wrap { position: relative; display: flex; align-items: center; }
         .input-clear-wrap input { padding-right: 38px; }
         .clear-input-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-60%); background: var(--border); color: var(--text); border: none; width: 24px; height: 24px; border-radius: 50%; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center; }
 
-        /* Badges & Chips */
         .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; font-size: 0.73rem; font-weight: 700; background: var(--primary-light); color: var(--primary); border-radius: 6px; margin-right: 4px; margin-bottom: 4px; }
         .badge-purple { background: var(--purple-light); color: var(--purple); }
         .badge-home { background: var(--teal-light); color: var(--teal); }
@@ -116,13 +105,11 @@
         .badge-danger { background: var(--danger-light); color: var(--danger); }
         .badge-success { background: var(--success-light); color: var(--success); }
         
-        /* Hashtag Chips */
         .chips-container { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px 0; }
         .chip { padding: 5px 10px; font-size: 0.78rem; font-weight: 600; border-radius: 20px; background: var(--bg); color: var(--text); border: 1px solid var(--border); cursor: pointer; user-select: none; transition: 0.15s; }
         .chip:active, .chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
         .chip-funny { border-style: dashed; border-color: var(--purple); color: var(--purple); }
 
-        /* Pill Tracker & Reminder Box */
         .date-navigator { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 10px 14px; border-radius: 14px; border: 1px solid var(--border); margin-bottom: 14px; box-shadow: var(--shadow); }
         .date-nav-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; }
         .dose-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
@@ -136,25 +123,21 @@
         .timer-chip { background: var(--card-bg); border: 1px solid var(--border); padding: 5px 9px; border-radius: 8px; font-size: 0.76rem; font-weight: 700; cursor: pointer; color: var(--purple); display: inline-block; margin: 3px 2px; }
         .timer-chip:active { background: var(--purple); color: white; }
 
-        /* Search History Dropdown */
         .search-wrapper { position: relative; }
         .search-history-box { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-top: -6px; margin-bottom: 10px; box-shadow: var(--shadow); }
         .history-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); padding: 4px 10px; border-radius: 14px; font-size: 0.78rem; margin: 3px; cursor: pointer; color: var(--text); border: 1px solid var(--border); }
 
-        /* Media & Files */
         .media-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-top: 8px; display: flex; gap: 10px; align-items: center; }
         .thumb-box { position: relative; width: 62px; height: 62px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #0f172a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
         .thumb { width: 100%; height: 100%; object-fit: cover; }
         .audio-item { background: var(--bg); padding: 8px 10px; border-radius: 10px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--border); }
         .audio-item audio { height: 34px; max-width: 190px; }
 
-        /* Timeline */
         .timeline-container { position: relative; padding-left: 22px; border-left: 3px solid var(--primary); margin-top: 14px; margin-left: 8px; }
         .timeline-item { position: relative; margin-bottom: 18px; }
         .timeline-item::before { content: ''; position: absolute; left: -30px; top: 12px; width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 3px solid var(--card-bg); box-shadow: 0 0 0 2px var(--primary); }
         .timeline-item.home-event::before { background: var(--teal); box-shadow: 0 0 0 2px var(--teal); }
 
-        /* Analytics Bars & Stats */
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
         .stat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 12px; text-align: center; box-shadow: var(--shadow); }
         .stat-box h4 { font-size: 1.35rem; font-weight: 800; color: var(--primary); }
@@ -162,7 +145,6 @@
         .bar-container { background: var(--bg); border-radius: 6px; height: 10px; width: 100%; margin-top: 5px; overflow: hidden; border: 1px solid var(--border); }
         .bar-fill { background: var(--primary); height: 100%; border-radius: 6px; transition: width 0.4s ease; }
 
-        /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 1000; justify-content: center; align-items: flex-end; backdrop-filter: blur(2px); }
         .modal.center-modal { align-items: center; padding: 16px; }
         .modal-content { background: var(--card-bg); color: var(--text); width: 100%; max-width: 600px; max-height: 92vh; overflow-y: auto; padding: 20px; border-radius: 24px 24px 0 0; animation: slideUp 0.25s ease; }
@@ -170,14 +152,12 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Toast Notifications */
         #toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 92%; max-width: 400px; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
         .toast { background: #1e293b; color: white; padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; border-left: 5px solid var(--success); }
         .toast.toast-warning { border-left-color: var(--warning); }
         .toast.toast-danger { border-left-color: var(--danger); }
         @keyframes toastIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* Avatar Picker Grid */
         .emoji-grid { display: flex; gap: 8px; overflow-x: auto; padding: 6px 0; margin-bottom: 10px; }
         .emoji-option { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; flex-shrink: 0; background: var(--bg); }
         .emoji-option.selected { border-color: var(--primary); background: var(--primary-light); transform: scale(1.08); }
@@ -188,10 +168,8 @@
 </head>
 <body>
 
-    <!-- TOAST NOTIFICATIONS -->
     <div id="toast-container"></div>
 
-    <!-- HEADER -->
     <header>
         <div class="header-title">🩺 Сімейна Медкартка <span style="font-size:0.7rem; background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:6px;">PRO</span></div>
         <div class="header-actions">
@@ -201,7 +179,6 @@
         </div>
     </header>
 
-    <!-- TABS -->
     <div class="tabs">
         <div class="tab active" onclick="switchTab('members')"><span class="tab-icon">👨‍👩‍👧‍👦</span>Сім'я</div>
         <div class="tab" onclick="switchTab('visits')"><span class="tab-icon">📋</span>Журнал</div>
@@ -213,7 +190,6 @@
     </div>
 
     <div class="container">
-        <!-- AUTO-BACKUP DUE BANNER -->
         <div id="backupDueBanner">
             <div style="font-size:0.85rem;">
                 <b>⏰ Час резервної копії!</b><br>
@@ -222,7 +198,6 @@
             <button class="btn btn-sm" style="background:white; color:#ea580c; flex-shrink:0;" onclick="shareBackupToCloud()">☁️ Бекап</button>
         </div>
 
-        <!-- ACTIVE REMINDERS BANNER -->
         <div id="activeRemindersBanner" style="display:none;" class="card"></div>
 
         <!-- TAB 1: FAMILY MEMBERS -->
@@ -284,7 +259,6 @@
                 <div class="sub-tab" id="subTabBtnCabinet" onclick="switchMedSubTab('cabinet')">🧰 Домашня аптечка</div>
             </div>
 
-            <!-- SUB-VIEW 1: PILL TRACKER -->
             <div id="med-sub-tracker">
                 <button class="btn btn-purple" onclick="openMedModal()" style="margin-top:0; margin-bottom:12px;">➕ Призначити курс ліків / Вітамінів</button>
 
@@ -312,7 +286,6 @@
                 <div id="meds-list"></div>
             </div>
 
-            <!-- SUB-VIEW 2: HOME PHARMACY CABINET (АПТЕЧКА) -->
             <div id="med-sub-cabinet" style="display:none;">
                 <button class="btn btn-teal" onclick="openCabinetModal()" style="margin-top:0; margin-bottom:12px;">➕ Додати ліки в домашню аптечку</button>
 
@@ -417,7 +390,6 @@
                 <input type="text" id="analyticsQuery" placeholder="Напр. стоматолог або грип..." oninput="renderAnalytics()" style="margin-bottom:0;">
             </div>
 
-            <!-- Financial Summary -->
             <div class="stats-grid">
                 <div class="stat-box">
                     <h4 id="anTotalSpent" style="color:var(--warning);">0 ₴</h4>
@@ -473,31 +445,19 @@
                     <option value="30">Раз на місяць (кожні 30 днів)</option>
                 </select>
 
-                <div class="form-row">
-                    <button class="btn btn-teal" onclick="shareBackupToCloud()">☁️ Надіслати на Google Диск</button>
-                    <button class="btn" onclick="exportData()">📱 Зберегти в Download</button>
-                </div>
-                <p style="font-size:0.78rem; margin-top:8px;">
-                    💡 <b>Як це працює на Android:</b><br>
-                    • <b>«☁️ Надіслати на Google Диск»</b> — відкриває системне меню телефона з прикріпленим файлом бази. Просто натисніть на іконку <b>Диск (Google Drive)</b> або Telegram!<br>
-                    • <b>«📱 Зберегти в Download»</b> — напряму записує файл резервної копії у папку <b>Завантаження (Download)</b> вашого телефона.
-                </p>
+                <button class="btn btn-teal" onclick="shareBackupToCloud()">☁️ Надіслати в Google Диск / Telegram</button>
+                <button class="btn" onclick="copyBackupToClipboard()">📋 Скопіювати базу в буфер обміну</button>
+                <button class="btn btn-outline" onclick="exportData()">⬇️ Скачати файл (.json)</button>
 
                 <div class="divider"></div>
-                <label>⬆️ Відновлення даних із файлу резервної копії</label>
+                <label>⬆️ Відновлення даних (з файлу або скопійованого коду)</label>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📂 Вибрати файл Backup (.json) з телефона</button>
                 <input type="file" id="importFile" accept=".json,application/json,text/plain,*/*" style="display: none;" onchange="importData(event)">
 
-                <!-- 100% Fallback: Text / Clipboard Backup -->
-                <details style="margin-top:14px; font-size:0.82rem; color:var(--text-light);">
-                    <summary style="cursor:pointer; font-weight:700; color:var(--primary);">📋 Резервний спосіб: Копіювання / Вставка через буфер обміну</summary>
-                    <div style="margin-top:8px;">
-                        <p>Якщо потрібно швидко перекинути базу текстом (у нотатки чи повідомлення):</p>
-                        <button class="btn btn-outline btn-sm" style="width:100%; margin-bottom:8px;" onclick="copyBackupToClipboard()">📋 Скопіювати всю базу в буфер обміну</button>
-                        <textarea id="pasteBackupArea" rows="3" placeholder="Для відновлення вставте сюди скопійований код бази..."></textarea>
-                        <button class="btn btn-purple btn-sm" style="width:100%;" onclick="restoreFromPastedText()">🔄 Відновити базу з вставленого тексту</button>
-                    </div>
-                </details>
+                <div style="margin-top:10px;">
+                    <textarea id="pasteBackupArea" rows="3" placeholder="Або вставте сюди скопійований код бази для миттєвого відновлення..." style="font-size:0.8rem;"></textarea>
+                    <button class="btn btn-purple btn-sm" style="width:100%;" onclick="restoreFromPastedText()">🔄 Відновити з вставленого тексту</button>
+                </div>
             </div>
 
             <div class="card">
@@ -728,7 +688,6 @@
             <label>💊 Призначене лікування та рекомендації</label>
             <textarea id="vTreatment" rows="3" placeholder="Назви препаратів, дозування, скільки днів приймати..."></textarea>
 
-            <!-- FINANCIAL BLOCK -->
             <div class="card" style="background:var(--bg); padding:12px; margin: 8px 0;">
                 <label style="margin-top:0; color:var(--text);">💰 Бухгалтерія візиту (грн)</label>
                 <div class="form-row">
@@ -743,18 +702,15 @@
                 </div>
             </div>
 
-            <!-- HASHTAGS -->
             <label>🏷️ Хештеги запису (натисніть для швидкого вибору)</label>
             <input type="text" id="vTags" placeholder="#аналізи #профогляд">
             <div id="vTagChips" class="chips-container"></div>
 
-            <!-- MEDIA ATTACHMENTS -->
             <div class="divider"></div>
             <label>📎 Фото виписок, рентгену, PDF-аналізів або відео</label>
             <input type="file" id="vMediaFilePicker" accept="image/*,video/*,application/pdf" multiple onchange="addNewMediaItem(this, 'vMediaItemsList')">
             <div id="vMediaItemsList"></div>
 
-            <!-- AUDIO / DICTAPHONE -->
             <div class="divider"></div>
             <label>🎙 Запис прийому лікаря (Диктофон або аудіофайл)</label>
             <div class="form-row" style="margin-bottom:8px;">
@@ -801,7 +757,7 @@
 
             <label>🏷️ Хештеги (натисніть, щоб додати)</label>
             <input type="text" id="hTags" placeholder="#самолікування #продуло">
-            <div class="chips-container" id="hTagChips"></div>
+            <div id="hTagChips" class="chips-container"></div>
 
             <label>📎 Фото (напр. висипка, показники термометра, чек чи коробка ліків)</label>
             <input type="file" id="hMediaFilePicker" accept="image/*,application/pdf" multiple onchange="addNewMediaItem(this, 'hMediaItemsList')">
@@ -812,12 +768,10 @@
         </div>
     </div>
 
-    <!-- MODAL: EMERGENCY DOCTOR CARD -->
     <div id="emergencyModal" class="modal center-modal">
         <div class="modal-content" id="emergencyModalContent"></div>
     </div>
 
-    <!-- MODAL: CONFIRMATION DIALOG -->
     <div id="confirmModal" class="modal center-modal">
         <div class="modal-content" style="text-align:center;">
             <div style="font-size:2.5rem; margin-bottom:8px;">⚠️</div>
@@ -830,7 +784,6 @@
         </div>
     </div>
 
-    <!-- MODAL: ALARM ALERT POPUP WHEN TIMER FIRES -->
     <div id="alarmPopupModal" class="modal center-modal">
         <div class="modal-content" style="text-align:center; border:3px solid var(--purple);">
             <div style="font-size:3.2rem; margin-bottom:6px;">⏰💊</div>
@@ -840,27 +793,21 @@
         </div>
     </div>
 
-    <!-- MODAL: HELP / FAQ -->
     <div id="helpModal" class="modal">
         <div class="modal-content">
             <h3>📖 Довідка по додатку «Сімейна Медкартка PRO»</h3>
             <div class="divider"></div>
-            <p><b>1. Як робити резервну копію на Google Диск та телефон:</b><br>У вкладці «⚙️ Меню» натисніть <b>«☁️ Надіслати на Google Диск»</b> — відкриється меню телефона, де достатньо натиснути на іконку Google Диску. А кнопка <b>«📱 Зберегти в Download»</b> записує файл напряму у папку Завантаження вашого телефона!</p>
-            <p><b>2. Жест «Назад» (змах з краю екрана):</b><br>Ви можете закривати будь-яке відкрите вікно або повертатися на головну вкладку стандартним жестом «Назад» на телефоні.</p>
-            <p><b>3. Нагадування про наступну таблетку (🔔):</b><br>У вкладці «💊 Ліки й Аптечка» під кожним препаратом можна натиснути таймер (напр. <i>«+4 год»</i>, <i>«+8 год»</i> або вибрати точний час).</p>
+            <p><b>1. Резервне копіювання:</b><br>У вкладці «⚙️ Меню» натисніть <b>«☁️ Надіслати в Google Диск / Telegram»</b> або <b>«📋 Скопіювати базу»</b>.</p>
+            <p><b>2. Жест «Назад»:</b><br>Закривайте будь-яке відкрите вікно змахом з краю екрана телефона.</p>
             <button class="btn" onclick="closeModals()">Зрозуміло, дякую!</button>
         </div>
     </div>
 
-    <!-- MODAL: MEDIA VIEWER -->
     <div id="mediaViewerModal" class="modal" onclick="closeMediaViewer(event)" style="background: rgba(0,0,0,0.92); justify-content: center; align-items: center;">
         <div style="position: relative; width: 96%; max-height: 92vh; text-align: center;" id="mediaViewerContainer"></div>
     </div>
 
     <script>
-        /* ==========================================
-           1. STATE, CONSTANTS & INITIALIZATION
-        ========================================== */
         const EMOJI_AVATARS = ['👨', '👩', '👦', '👧', '👴', '👵', '👶', '🧔', '👱‍♀️', '🦸‍♂️'];
         const MONTHS_UK = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
         
@@ -873,8 +820,7 @@
             customTags: [],
             searchHistory: [],
             backupIntervalDays: 7,
-            lastBackupTimestamp: null,
-            gdriveToken: ''
+            lastBackupTimestamp: null
         }));
 
         let currentActiveTab = 'members';
@@ -927,9 +873,6 @@
             }
         }
 
-        /* ==========================================
-           2. ANDROID BACK GESTURE / BUTTON HANDLER
-        ========================================== */
         function isAnyModalOpen() {
             let modals = document.querySelectorAll('.modal');
             for (let m of modals) {
@@ -977,9 +920,6 @@
             });
         });
 
-        /* ==========================================
-           3. INDEXED-DB ENGINE
-        ========================================== */
         const DB_NAME = 'FamilyMedProDB';
         const DB_VERSION = 1;
         let idb = null;
@@ -1042,9 +982,6 @@
             checkBackupSchedule();
         }
 
-        /* ==========================================
-           4. UI HELPERS: TOASTS, CONFIRM, THEME, AGE
-        ========================================== */
         function showToast(message, type = 'success') {
             let container = document.getElementById('toast-container');
             let toast = document.createElement('div');
@@ -1057,7 +994,7 @@
                 toast.style.transform = 'translateY(-20px)';
                 toast.style.transition = '0.3s';
                 setTimeout(() => toast.remove(), 300);
-            }, 2800);
+            }, 2500);
         }
 
         let confirmCallback = null;
@@ -1138,9 +1075,6 @@
             });
         }
 
-        /* ==========================================
-           5. NAVIGATION & AUTO-CLEAR SEARCH
-        ========================================== */
         function switchTab(tabName, fromBackGesture = false) {
             currentActiveTab = tabName;
             if (!fromBackGesture && window.history && window.history.pushState) {
@@ -1243,9 +1177,6 @@
             ).join('');
         }
 
-        /* ==========================================
-           6. SEARCH HISTORY & CUSTOM TAGS
-        ========================================== */
         function saveSearchQuery(q) {
             q = q.trim();
             if (!q || q.length < 2) return;
@@ -1308,9 +1239,6 @@
             }
         }
 
-        /* ==========================================
-           7. MEMBERS MANAGEMENT & RELIABLE BIRTHDATE
-        ========================================== */
         function renderEmojiPicker() {
             let container = document.getElementById('emojiPicker');
             container.innerHTML = EMOJI_AVATARS.map(em => `
@@ -1448,9 +1376,6 @@
             document.getElementById('emergencyModal').style.display = 'flex';
         }
 
-        /* ==========================================
-           8. MEDICATION TRACKER & NEXT DOSE REMINDERS
-        ========================================== */
         function playAlarmSound() {
             try {
                 let ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1828,7 +1753,6 @@
             }).join('');
         }
 
-        /* --- HOME CABINET (ДОМАШНЯ АПТЕЧКА) --- */
         function getCabinetItemExpiryStatus(expiryMonthStr) {
             if (!expiryMonthStr) return { status: 'ok', daysLeft: 999, label: 'Термін не вказано' };
             let parts = expiryMonthStr.split('-');
@@ -1977,9 +1901,6 @@
             }).join('');
         }
 
-        /* ==========================================
-           9. VISITS, HOME ILLNESSES, MEDIA & AUDIO
-        ========================================== */
         function openVisitModal(id = null) {
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
             pushModalState();
@@ -2098,7 +2019,7 @@
             let tagsList = ['#аналізи', '#рентген', '#УЗД', '#кров', '#рецепт', '#виписка'];
             container.innerHTML = currentVisitMedia.map((m, idx) => `
                 <div class="media-card">
-                    <div class="thumb-box" onclick='openMediaViewer(${JSON.stringify(m)})'>
+                    <div class="thumb-box" onclick="openCurrentMediaPreview(${idx})">
                         ${m.type === 'video' ? `<video class="thumb" src="${m.data}"></video><span style="position:absolute;">▶</span>` : 
                           (m.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${m.data}" class="thumb">`)}
                     </div>
@@ -2112,6 +2033,17 @@
                     <button type="button" onclick="currentVisitMedia.splice(${idx},1); renderMediaItemsList('${containerId}');" style="background:var(--danger); color:white; border:none; border-radius:50%; width:26px; height:26px; font-weight:bold; cursor:pointer;">×</button>
                 </div>
             `).join('');
+        }
+
+        function openCurrentMediaPreview(idx) {
+            if (currentVisitMedia[idx]) openMediaViewer(currentVisitMedia[idx]);
+        }
+
+        function openVisitMediaById(visitId, mediaIdx) {
+            let v = dbData.visits.find(x => x.id === visitId);
+            if (v && v.media && v.media[mediaIdx]) {
+                openMediaViewer(v.media[mediaIdx]);
+            }
         }
 
         function addTagToMediaItem(idx, tag, containerId) {
@@ -2258,9 +2190,6 @@
             });
         }
 
-        /* ==========================================
-           10. RENDERING ALL VIEWS & ANALYTICS
-        ========================================== */
         function updateDropdowns() {
             let memberOptions = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
             
@@ -2379,8 +2308,8 @@
 
                         ${mediaList.length > 0 ? `
                             <div style="margin-top:10px;">
-                                ${mediaList.map(m => `
-                                    <div style="font-size:0.82rem; background:var(--bg); padding:6px 10px; border-radius:8px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer;" onclick='openMediaViewer(${JSON.stringify(m)})'>
+                                ${mediaList.map((m, mIdx) => `
+                                    <div style="font-size:0.82rem; background:var(--bg); padding:6px 10px; border-radius:8px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer;" onclick="openVisitMediaById('${v.id}', ${mIdx})">
                                         <span style="color:var(--primary); font-weight:600;">${m.type === 'pdf' ? '📄' : (m.type === 'video' ? '🎬' : '🖼️')} ${m.title || 'Документ'}</span>
                                         <span style="font-size:0.72rem; color:var(--text-light);">${m.tags || ''} 🔍</span>
                                     </div>
@@ -2412,8 +2341,10 @@
                 let member = dbData.members.find(m => m.id === v.memberId);
                 let memberName = member ? member.name : 'Видалений';
                 if (v.media && Array.isArray(v.media)) {
-                    v.media.forEach(m => {
+                    v.media.forEach((m, mIdx) => {
                         allDocs.push({
+                            visitId: v.id,
+                            mediaIdx: mIdx,
                             date: v.date,
                             memberId: v.memberId,
                             memberName: memberName,
@@ -2441,14 +2372,14 @@
 
             container.innerHTML = filtered.map(d => `
                 <div class="card" style="display:flex; gap:12px; align-items:center;">
-                    <div class="thumb-box" onclick='openMediaViewer(${JSON.stringify(d.media)})'>
+                    <div class="thumb-box" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">
                         ${d.media.type === 'video' ? `<video class="thumb" src="${d.media.data}"></video>` : 
                           (d.media.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${d.media.data}" class="thumb">`)}
                     </div>
                     <div style="flex:1;">
                         <span class="badge">${d.date}</span>
                         <span class="badge badge-purple">${d.memberName}</span>
-                        <h3 style="font-size:0.95rem; margin-top:4px; cursor:pointer; color:var(--primary);" onclick='openMediaViewer(${JSON.stringify(d.media)})'>${d.media.title || 'Документ'}</h3>
+                        <h3 style="font-size:0.95rem; margin-top:4px; cursor:pointer; color:var(--primary);" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">${d.media.title || 'Документ'}</h3>
                         <p style="font-size:0.8rem;">Подія: <b>${d.diagnosis}</b></p>
                         <div>${(d.media.tags || '').split(' ').filter(Boolean).map(t => `<span class="badge" style="background:var(--bg); color:var(--text-light);">${t}</span>`).join('')}</div>
                     </div>
@@ -2594,12 +2525,9 @@
                 `).join('');
         }
 
-        /* ==========================================
-           11. CORDOVA NATIVE BACKUP (GOOGLE DRIVE & PHONE)
-        ========================================== */
         function buildBackupPayload() {
             return JSON.stringify({
-                version: 6,
+                version: 8,
                 exportedAt: new Date().toISOString(),
                 members: dbData.members,
                 visits: dbData.visits,
@@ -2657,138 +2585,80 @@
             banner.style.display = diffDays >= intervalDays ? 'flex' : 'none';
         }
 
-        // Helper: Convert UTF-8 string to Base64 safely
-        function utf8ToBase64(str) {
-            return window.btoa(unescape(encodeURIComponent(str)));
-        }
-
-        // 1. CLOUD / GOOGLE DRIVE SHARE (Cordova SocialSharing Plugin + Web Share Fallback)
         async function shareBackupToCloud() {
             let jsonStr = buildBackupPayload();
             let fileName = `FamilyMed_Backup_${new Date().toISOString().split('T')[0]}.json`;
 
-            // A) If running inside Cordova Android APK with SocialSharing plugin:
-            if (window.plugins && window.plugins.socialsharing) {
+            // 1. Try sharing as a File via Web Share API
+            if (navigator.share) {
                 try {
-                    let base64Data = `data:application/json;base64,${utf8ToBase64(jsonStr)}`;
-                    window.plugins.socialsharing.shareWithOptions({
-                        message: 'Резервна копія бази Сімейна Медкартка PRO',
-                        subject: fileName,
-                        files: [base64Data],
-                        chooserTitle: 'Оберіть Google Диск або месенджер'
-                    }, function(result) {
-                        markBackupCompleted();
-                        showToast('Файл передано у хмару / Google Диск! ☁️');
-                    }, function(errMsg) {
-                        showToast('Помилка відправки: ' + errMsg, 'danger');
-                    });
-                    return;
-                } catch (e) {
-                    console.error("SocialSharing error:", e);
-                }
-            }
-
-            // B) If running in mobile/desktop browser with Web Share API:
-            if (navigator.canShare) {
-                try {
-                    let file = new File([jsonStr], fileName, { type: 'application/json' });
-                    if (navigator.canShare({ files: [file] })) {
+                    let file = new File([jsonStr], fileName, { type: 'text/plain' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
-                            title: 'Резервна копія Сімейна Медкартка PRO',
+                            title: fileName,
+                            text: 'Резервна копія Сімейна Медкартка PRO',
                             files: [file]
                         });
                         markBackupCompleted();
-                        showToast('Відправлено у хмару! ☁️');
+                        showToast('Відправлено у Google Диск / Хмару! ☁️');
                         return;
                     }
+                } catch (e) {}
+
+                // 2. Fallback: Share JSON text directly via Android Share sheet (works in all Android WebViews!)
+                try {
+                    await navigator.share({
+                        title: fileName,
+                        text: jsonStr
+                    });
+                    markBackupCompleted();
+                    showToast('Базу передано через меню Поділитися! ☁️');
+                    return;
                 } catch (err) {
                     if (err.name === 'AbortError') return;
                 }
             }
-
-            // C) Fallback to local save
-            exportData();
+            // 3. Final fallback: Copy to clipboard and show in box
+            copyBackupToClipboard();
         }
 
-        // 2. SAVE DIRECTLY TO PHONE STORAGE (Cordova File Plugin + Browser Download Fallback)
         function exportData() {
             let jsonStr = buildBackupPayload();
             let fileName = `FamilyMed_PRO_Backup_${new Date().toISOString().split('T')[0]}.json`;
-
-            // A) If running inside Cordova Android APK with cordova-plugin-file:
-            if (window.cordova && window.cordova.file && window.resolveLocalFileSystemURL) {
-                // Try public Download folder first, fallback to externalDataDirectory
-                let targetDir = 'file:///storage/emulated/0/Download/';
-                
-                function writeToDir(dirPath, onSuccess, onFail) {
-                    window.resolveLocalFileSystemURL(dirPath, function(dirEntry) {
-                        dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
-                            fileEntry.createWriter(function(fileWriter) {
-                                fileWriter.onwriteend = function() {
-                                    onSuccess(fileEntry.nativeURL);
-                                };
-                                fileWriter.onerror = onFail;
-                                let blob = new Blob([jsonStr], { type: 'application/json' });
-                                fileWriter.write(blob);
-                            }, onFail);
-                        }, onFail);
-                    }, onFail);
-                }
-
-                writeToDir(targetDir, function(savedPath) {
-                    markBackupCompleted();
-                    showToast(`✅ Збережено в папку Download: ${fileName}`);
-                }, function() {
-                    // Fallback to app external storage and open Share dialog so user can save it anywhere
-                    let fallbackDir = cordova.file.externalDataDirectory || cordova.file.dataDirectory;
-                    writeToDir(fallbackDir, function(savedPath) {
-                        markBackupCompleted();
-                        if (window.plugins && window.plugins.socialsharing) {
-                            window.plugins.socialsharing.share(null, fileName, savedPath, null);
-                        } else {
-                            showToast(`Збережено в пам'ять додатка: ${fileName}`);
-                        }
-                    }, function() {
-                        showToast('Скористайтеся кнопкою «Надіслати на Google Диск» або копіюванням у буфер!', 'warning');
-                    });
-                });
-                return;
+            try {
+                let dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+                let a = document.createElement('a');
+                a.href = dataUri;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                markBackupCompleted();
+                showToast('Запит на скачування виконано! Якщо телефон блокує скачування — натисніть «Скопіювати базу» вище.');
+            } catch (e) {
+                copyBackupToClipboard();
             }
-
-            // B) Standard Browser Download (on PC)
-            let blob = new Blob([jsonStr], { type: 'application/json' });
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-            markBackupCompleted();
-            showToast('Резервну копію завантажено! 📱');
         }
 
-        // 3. CLIPBOARD BACKUP & RESTORE (100% Universal Fallback)
         function copyBackupToClipboard() {
             let jsonStr = buildBackupPayload();
+            let ta = document.getElementById('pasteBackupArea');
+            ta.value = jsonStr;
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(jsonStr).then(() => {
                     markBackupCompleted();
-                    showToast('Код бази скопійовано в буфер обміну! 📋');
-                }).catch(() => fallbackCopyText(jsonStr));
+                    showToast('Код бази скопійовано в буфер обміну! Можете вставити його в Google Диск чи Нотатки 📋');
+                }).catch(() => fallbackCopyText(ta));
             } else {
-                fallbackCopyText(jsonStr);
+                fallbackCopyText(ta);
             }
         }
 
-        function fallbackCopyText(text) {
-            let ta = document.getElementById('pasteBackupArea');
-            ta.value = text;
+        function fallbackCopyText(ta) {
             ta.select();
             document.execCommand('copy');
             markBackupCompleted();
-            showToast('Код бази скопійовано та виведено у текстове поле! 📋');
+            showToast('Код бази скопійовано в буфер обміну! 📋');
         }
 
         function restoreFromPastedText() {
@@ -2833,9 +2703,6 @@
             }
         }
 
-        /* ==========================================
-           12. MEDIA VIEWER & MODALS
-        ========================================== */
         function openMediaViewer(mediaObj) {
             pushModalState();
             let container = document.getElementById('mediaViewerContainer');
@@ -2847,7 +2714,7 @@
                         <div style="font-size:3rem;">📄</div>
                         <h3>${mediaObj.title || 'PDF-документ'}</h3>
                         <p>${mediaObj.tags || ''}</p>
-                        <button class="btn" onclick='shareSingleMediaFile(${JSON.stringify(mediaObj)})'>📂 Відкрити / Переслати PDF</button>
+                        <a href="${mediaObj.data}" download="${mediaObj.title || 'document'}.pdf" class="btn" style="text-decoration:none;">⬇️ Завантажити / Відкрити PDF</a>
                     </div>
                 `;
             } else {
@@ -2857,19 +2724,6 @@
                 `;
             }
             document.getElementById('mediaViewerModal').style.display = 'flex';
-        }
-
-        function shareSingleMediaFile(mediaObj) {
-            if (window.plugins && window.plugins.socialsharing) {
-                window.plugins.socialsharing.share(null, mediaObj.title || 'document.pdf', mediaObj.data, null);
-            } else {
-                let a = document.createElement('a');
-                a.href = mediaObj.data;
-                a.download = (mediaObj.title || 'document') + '.pdf';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }
         }
 
         function closeMediaViewer(e) {
