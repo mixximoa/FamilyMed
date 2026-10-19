@@ -42,7 +42,7 @@ jobs:
           MANIFEST="myapp/platforms/android/app/src/main/AndroidManifest.xml"
           sed -i 's|<application|<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />\n    <application|g' "$MANIFEST"
 
-      - name: Inject Native Android Bridge (Chunked PDF/Video Support, MediaStore, Mic, Alarm & Print) into MainActivity.java
+      - name: Inject Native Android Bridge (Chunked File Transfer & MediaStore) into MainActivity.java
         run: |
           cat << 'EOF' > myapp/platforms/android/app/src/main/java/com/family/medcard/MainActivity.java
           package com.family.medcard;
@@ -110,12 +110,11 @@ jobs:
                   private String chunkFileName = "";
                   private String chunkMimeType = "";
 
-                  // Записує файл через MediaStore (повертає content:// URI, який підтримують усі додатки Android 10-15)
+                  // Універсальний запис через MediaStore (щоб працювало Share для великих PDF/Відео)
                   private Uri writeBytesToMediaStore(String fileName, byte[] dataBytes, String mimeType, String subFolder) throws Exception {
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                           String relPath = Environment.DIRECTORY_DOWNLOADS + (subFolder != null && !subFolder.isEmpty() ? "/" + subFolder : "");
                           try {
-                              // Видаляємо попередню копію з такою ж назвою, щоб не створювати дублікатів (1), (2)...
                               getContentResolver().delete(
                                   MediaStore.Downloads.EXTERNAL_CONTENT_URI,
                                   MediaStore.Downloads.DISPLAY_NAME + "=?",
@@ -147,15 +146,6 @@ jobs:
                       fos.flush();
                       fos.close();
                       return Uri.fromFile(file);
-                  }
-
-                  private byte[] decodeBase64Data(String base64Data) {
-                      String pure = base64Data;
-                      int comma = base64Data.indexOf(',');
-                      if (comma != -1) {
-                          pure = base64Data.substring(comma + 1);
-                      }
-                      return Base64.decode(pure, Base64.DEFAULT);
                   }
 
                   private String executeFileActionWithBytes(String fileName, byte[] bytes, String mimeType, String actionType, String title) {
@@ -191,7 +181,9 @@ jobs:
                       }
                   }
 
-                  // --- ПОТОКОВА (ЧАНКОВА) ПЕРЕДАЧА ДЛЯ ВЕЛИКИХ PDF ТА ВІДЕО ---
+                  // -----------------------------------------------------------
+                  // ПОТОКОВА (ЧАНКОВА) ПЕРЕДАЧА ДЛЯ ВЕЛИКИХ PDF ТА ВІДЕО
+                  // -----------------------------------------------------------
                   @JavascriptInterface
                   public String startChunkedFile(String fileName, String mimeType) {
                       try {
@@ -207,7 +199,7 @@ jobs:
                   @JavascriptInterface
                   public String appendFileChunk(String base64Chunk) {
                       try {
-                          if (chunkStream == null) chunkStream = new ByteArrayOutputStream();
+                          if (chunkStream == null) return "ERR:No active stream";
                           byte[] decoded = Base64.decode(base64Chunk, Base64.DEFAULT);
                           chunkStream.write(decoded);
                           return "OK";
@@ -229,7 +221,9 @@ jobs:
                       }
                   }
 
-                  // --- СТАНДАРТНІ МЕТОДИ ---
+                  // -----------------------------------------------------------
+                  // ІНШІ СИСТЕМНІ ВИКЛИКИ
+                  // -----------------------------------------------------------
                   @JavascriptInterface
                   public String requestMicPermission() {
                       try {
@@ -281,16 +275,6 @@ jobs:
                   }
 
                   @JavascriptInterface
-                  public String saveBackupToPhone(String fileName, String content) {
-                      try {
-                          writeBytesToMediaStore(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json", "");
-                          return "OK";
-                      } catch (Exception e) {
-                          return "ERR:" + e.getMessage();
-                      }
-                  }
-
-                  @JavascriptInterface
                   public String shareBackupFile(String fileName, String content) {
                       try {
                           String mime = fileName.endsWith(".html") ? "text/html" : (fileName.endsWith(".txt") ? "text/plain" : "application/json");
@@ -311,21 +295,13 @@ jobs:
                   }
 
                   @JavascriptInterface
-                  public String saveBinaryFile(String fileName, String base64Data, String mimeType) {
-                      byte[] bytes = decodeBase64Data(base64Data);
-                      return executeFileActionWithBytes(fileName, bytes, mimeType, "download", fileName);
-                  }
-
-                  @JavascriptInterface
-                  public String openBinaryFile(String fileName, String base64Data, String mimeType) {
-                      byte[] bytes = decodeBase64Data(base64Data);
-                      return executeFileActionWithBytes(fileName, bytes, mimeType, "open", fileName);
-                  }
-
-                  @JavascriptInterface
-                  public String shareBinaryFile(String fileName, String base64Data, String mimeType, String title) {
-                      byte[] bytes = decodeBase64Data(base64Data);
-                      return executeFileActionWithBytes(fileName, bytes, mimeType, "share", title);
+                  public String saveBackupToPhone(String fileName, String content) {
+                      try {
+                          writeBytesToMediaStore(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json", "");
+                          return "OK";
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
                   }
               }
           }
