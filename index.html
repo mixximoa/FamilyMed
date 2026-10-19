@@ -1386,8 +1386,8 @@
             });
         });
 
-      /* ==========================================
-           4. INDEXED-DB ENGINE (ВИПРАВЛЕНО: БЕЗВІДМОВНЕ ЗБЕРЕЖЕННЯ)
+     /* ==========================================
+           4. INDEXED-DB ENGINE (БЕЗВІДМОВНЕ ЗБЕРЕЖЕННЯ)
         ========================================== */
         const DB_NAME = 'FamilyMedProDB';
         const DB_VERSION = 1;
@@ -1421,13 +1421,23 @@
 
         function loadFromFallback() {
             try {
-                dbData.members = JSON.parse(localStorage.getItem('med_members') || '[]');
-                dbData.visits = JSON.parse(localStorage.getItem('med_visits') || '[]');
-                dbData.medications = JSON.parse(localStorage.getItem('med_medications') || '[]');
-                dbData.cabinet = JSON.parse(localStorage.getItem('med_cabinet') || '[]');
-                dbData.doctors = JSON.parse(localStorage.getItem('med_doctors') || '[]');
-                dbData.reminders = JSON.parse(localStorage.getItem('med_reminders') || '[]');
+                let m = localStorage.getItem('med_members'); if (m) dbData.members = JSON.parse(m);
+                let v = localStorage.getItem('med_visits'); if (v) dbData.visits = JSON.parse(v);
+                let meds = localStorage.getItem('med_medications'); if (meds) dbData.medications = JSON.parse(meds);
+                let cab = localStorage.getItem('med_cabinet'); if (cab) dbData.cabinet = JSON.parse(cab);
+                let docs = localStorage.getItem('med_doctors'); if (docs) dbData.doctors = JSON.parse(docs);
+                let rem = localStorage.getItem('med_reminders'); if (rem) dbData.reminders = JSON.parse(rem);
             } catch(e) { console.error('Fallback load error'); }
+            ensureArraysExist();
+        }
+
+        function ensureArraysExist() {
+            if (!dbData.members) dbData.members = [];
+            if (!dbData.visits) dbData.visits = [];
+            if (!dbData.medications) dbData.medications = [];
+            if (!dbData.cabinet) dbData.cabinet = [];
+            if (!dbData.doctors) dbData.doctors = [];
+            if (!dbData.reminders) dbData.reminders = [];
         }
 
         function loadFromIDB() {
@@ -1444,15 +1454,11 @@
                     req.onsuccess = function() {
                         if (req.result) {
                             dbData = req.result;
-                            if (!dbData.medications) dbData.medications = [];
-                            if (!dbData.cabinet) dbData.cabinet = [];
-                            if (!dbData.doctors) dbData.doctors = [];
-                            if (!dbData.reminders) dbData.reminders = [];
-                            resolve();
                         } else {
                             loadFromFallback();
-                            saveToIDB().then(resolve);
                         }
+                        ensureArraysExist();
+                        resolve();
                     };
                     req.onerror = function() {
                         loadFromFallback();
@@ -1467,10 +1473,9 @@
 
         function saveToIDB() {
             return new Promise((resolve) => {
-                // 1. ЗАВЖДИ одразу оновлюємо інтерфейс, щоб користувач бачив результат
-                renderAll();
+                ensureArraysExist();
 
-                // 2. Подвійне резервування у LocalStorage на випадок збою IndexedDB
+                // 1. Подвійне резервування у LocalStorage на випадок збою IndexedDB
                 try {
                     localStorage.setItem('med_members', JSON.stringify(dbData.members));
                     localStorage.setItem('med_visits', JSON.stringify(dbData.visits));
@@ -1480,19 +1485,25 @@
                     localStorage.setItem('med_reminders', JSON.stringify(dbData.reminders));
                 } catch (e) { console.warn('LocalStorage error', e); }
 
+                // 2. Функція оновлення UI
+                let finalize = () => {
+                    try { renderAll(); } catch(err) { console.error('Render error:', err); }
+                    resolve();
+                };
+
                 // 3. Зберігаємо в основну базу IndexedDB
                 if (!idb) {
-                    resolve();
+                    finalize();
                     return;
                 }
                 try {
                     let tx = idb.transaction(['app_store'], 'readwrite');
                     let store = tx.objectStore('app_store');
                     store.put(dbData, 'main_data');
-                    tx.oncomplete = () => resolve();
-                    tx.onerror = () => resolve();
+                    tx.oncomplete = () => finalize();
+                    tx.onerror = () => finalize();
                 } catch (e) {
-                    resolve();
+                    finalize();
                 }
             });
         }
@@ -1507,6 +1518,7 @@
         ========================================== */
         function showToast(message, type = 'success') {
             let container = document.getElementById('toast-container');
+            if(!container) return;
             let toast = document.createElement('div');
             toast.className = `toast ${type === 'warning' ? 'toast-warning' : ''} ${type === 'danger' ? 'toast-danger' : ''}`;
             let icon = type === 'success' ? '✅' : (type === 'warning' ? '✏️' : '🗑️');
@@ -1542,10 +1554,10 @@
         function applyTheme() {
             if (appSettings.theme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                document.getElementById('themeBtn').innerText = '☀️';
+                let tb = document.getElementById('themeBtn'); if(tb) tb.innerText = '☀️';
             } else {
                 document.documentElement.removeAttribute('data-theme');
-                document.getElementById('themeBtn').innerText = '🌙';
+                let tb = document.getElementById('themeBtn'); if(tb) tb.innerText = '🌙';
             }
         }
 
@@ -1837,81 +1849,43 @@
         }
 
         function saveMember() {
-            let editId = document.getElementById('mEditId').value;
-            let name = document.getElementById('mName').value.trim();
-            if (!name) { showToast('Будь ласка, введіть ім\'я!', 'warning'); return; }
-            
-            let y = document.getElementById('mBirthYear').value;
-            let m = document.getElementById('mBirthMonth').value;
-            let d = document.getElementById('mBirthDay').value;
-            let birthDateStr = (y && m && d) ? `${y}-${m}-${d}` : (y ? `${y}-01-01` : '');
+            try {
+                let editId = document.getElementById('mEditId').value;
+                let name = document.getElementById('mName').value.trim();
+                if (!name) { showToast('Будь ласка, введіть ім\'я!', 'warning'); return; }
+                
+                let y = document.getElementById('mBirthYear').value;
+                let m = document.getElementById('mBirthMonth').value;
+                let d = document.getElementById('mBirthDay').value;
+                let birthDateStr = (y && m && d) ? `${y}-${m}-${d}` : (y ? `${y}-01-01` : '');
 
-            let memberObj = {
-                id: editId || Date.now().toString(),
-                name: name,
-                birthDate: birthDateStr,
-                bloodGroup: document.getElementById('mBlood').value,
-                allergies: document.getElementById('mAllergies').value,
-                chronic: document.getElementById('mChronic').value,
-                avatar: selectedMemberAvatar
-            };
+                let memberObj = {
+                    id: editId || Date.now().toString(),
+                    name: name,
+                    birthDate: birthDateStr,
+                    bloodGroup: document.getElementById('mBlood').value,
+                    allergies: document.getElementById('mAllergies').value,
+                    chronic: document.getElementById('mChronic').value,
+                    avatar: selectedMemberAvatar
+                };
 
-            if (editId) {
-                let idx = dbData.members.findIndex(x => x.id === editId);
-                if (idx !== -1) dbData.members[idx] = memberObj;
-                showToast(`Профіль «${name}» оновлено!`, 'warning');
-            } else {
-                dbData.members.push(memberObj);
-                showToast(`Додано члена родини: «${name}»!`);
+                ensureArraysExist();
+
+                if (editId) {
+                    let idx = dbData.members.findIndex(x => x.id === editId);
+                    if (idx !== -1) dbData.members[idx] = memberObj;
+                    showToast(`Профіль «${name}» оновлено!`, 'warning');
+                } else {
+                    dbData.members.push(memberObj);
+                    showToast(`Додано члена родини: «${name}»!`);
+                }
+                
+                saveToIDB().then(() => {
+                    closeModals();
+                });
+            } catch (err) {
+                alert("Помилка збереження: " + err.message);
             }
-            closeModals();
-            saveToIDB();
-        }
-
-        function deleteMember(id) {
-            let m = dbData.members.find(x => x.id === id);
-            askConfirm('Видалити профіль?', `Ви впевнені, що хочете видалити профіль «${m ? m.name : ''}» та всі пов'язані медичні записи?`, () => {
-                dbData.members = dbData.members.filter(x => x.id !== id);
-                dbData.visits = dbData.visits.filter(v => v.memberId !== id);
-                dbData.medications = (dbData.medications || []).filter(med => med.memberId !== id);
-                saveToIDB();
-                showToast('Профіль та записи видалено', 'danger');
-            });
-        }
-
-        function openEmergencyCard(memberId) {
-            pushModalState();
-            let m = dbData.members.find(x => x.id === memberId);
-            if (!m) return;
-            let memberVisits = dbData.visits.filter(v => v.memberId === memberId).sort((a,b) => new Date(b.date) - new Date(a.date));
-            let recentDiagnoses = memberVisits.slice(0, 4).map(v => `<li><b>${v.date}:</b> ${v.diagnosis || v.doctor} ${v.treatment ? `<i>(${v.treatment})</i>` : ''}</li>`).join('');
-
-            let avatarHtml = (m.avatar && m.avatar.startsWith('data:image')) ? `<img src="${m.avatar}">` : (m.avatar || '👤');
-            let ageStr = calculateAge(m.birthDate);
-
-            document.getElementById('emergencyModalContent').innerHTML = `
-                <div style="text-align:center; margin-bottom:12px;">
-                    <div class="avatar-circle" style="margin:0 auto 8px auto; width:76px; height:76px; font-size:2.5rem;">${avatarHtml}</div>
-                    <h2 style="font-size:1.35rem; color:var(--primary);">${m.name}</h2>
-                    <p style="font-size:1rem; font-weight:bold;">${m.birthDate ? `Дата нар.: ${m.birthDate} (${ageStr})` : 'Вік не вказано'}</p>
-                </div>
-                <div class="card" style="background:var(--danger-light); border-color:var(--danger); margin-bottom:10px;">
-                    <p style="font-size:1rem; color:var(--danger);"><b>🩸 Група крові:</b> ${m.bloodGroup || 'Не вказано'}</p>
-                    <p style="font-size:1rem; color:var(--danger);"><b>⚠️ Алергії на ліки/продукти:</b> ${m.allergies || 'Немає даних'}</p>
-                </div>
-                <div class="card" style="background:var(--bg); margin-bottom:10px;">
-                    <p style="font-size:0.95rem;"><b>📌 Хронічні стани / Особливості:</b><br>${m.chronic || 'Немає записів'}</p>
-                </div>
-                <div class="card" style="background:var(--bg); margin-bottom:14px;">
-                    <p style="font-size:0.95rem;"><b>🕒 Останні звернення та призначення:</b></p>
-                    <ul style="padding-left:18px; font-size:0.88rem; margin-top:6px; line-height:1.5;">
-                        ${recentDiagnoses || '<li>Записів поки немає</li>'}
-                    </ul>
-                </div>
-                <button class="btn btn-teal" onclick="closeModals(); openPrintableReportModal('${m.id}');">🖨️ Повна виписка для лікаря (PDF / Друк)</button>
-                <button class="btn btn-secondary" onclick="closeModals()">Закрити картку (Назад)</button>
-            `;
-            document.getElementById('emergencyModal').style.display = 'flex';
         }
 
         /* ==========================================
