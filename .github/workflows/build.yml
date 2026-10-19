@@ -42,19 +42,16 @@ jobs:
           MANIFEST="myapp/platforms/android/app/src/main/AndroidManifest.xml"
           sed -i 's|<application|<uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />\n    <application|g' "$MANIFEST"
 
-      - name: Inject Chunked Streaming & Content-URI Bridge into MainActivity.java
+      - name: Inject Native Android Bridge (Chunked PDF/Video Support, MediaStore, Mic, Alarm & Print) into MainActivity.java
         run: |
           cat << 'EOF' > myapp/platforms/android/app/src/main/java/com/family/medcard/MainActivity.java
           package com.family.medcard;
 
           import android.Manifest;
-          import android.content.ClipData;
-          import android.content.ContentResolver;
           import android.content.ContentValues;
           import android.content.Context;
           import android.content.Intent;
           import android.content.pm.PackageManager;
-          import android.database.Cursor;
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
@@ -70,8 +67,8 @@ jobs:
           import android.webkit.PermissionRequest;
           import android.webkit.WebChromeClient;
           import android.webkit.WebView;
+          import java.io.ByteArrayOutputStream;
           import java.io.File;
-          import java.io.FileInputStream;
           import java.io.FileOutputStream;
           import java.io.OutputStream;
           import java.nio.charset.StandardCharsets;
@@ -109,145 +106,130 @@ jobs:
               }
 
               public class WebAppInterface {
-                  private File currentStreamingFile = null;
-                  private FileOutputStream currentStreamingFos = null;
+                  private ByteArrayOutputStream chunkStream = null;
+                  private String chunkFileName = "";
+                  private String chunkMimeType = "";
 
-                  // Створює або перезаписує файл у MediaStore, повертаючи 100% валідний content:// URI для всіх додатків Android
-                  private Uri exportFileToMediaStore(File sourceFile, String displayFileName, String mimeType, boolean isPermanentDownload) throws Exception {
-                      ContentResolver resolver = getContentResolver();
+                  // Записує файл через MediaStore (повертає content:// URI, який підтримують усі додатки Android 10-15)
+                  private Uri writeBytesToMediaStore(String fileName, byte[] dataBytes, String mimeType, String subFolder) throws Exception {
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                          String subFolder = isPermanentDownload ? Environment.DIRECTORY_DOWNLOADS : (Environment.DIRECTORY_DOWNLOADS + "/FamilyMed_Shared");
-                          // Видаляємо попередню копію з таким самим ім'ям, щоб не плодити дублікати (1), (2) і уникати помилок
+                          String relPath = Environment.DIRECTORY_DOWNLOADS + (subFolder != null && !subFolder.isEmpty() ? "/" + subFolder : "");
                           try {
-                              String selection = MediaStore.Downloads.DISPLAY_NAME + "=?";
-                              String[] selectionArgs = new String[]{ displayFileName };
-                              resolver.delete(MediaStore.Downloads.EXTERNAL_CONTENT_URI, selection, selectionArgs);
+                              // Видаляємо попередню копію з такою ж назвою, щоб не створювати дублікатів (1), (2)...
+                              getContentResolver().delete(
+                                  MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                                  MediaStore.Downloads.DISPLAY_NAME + "=?",
+                                  new String[]{ fileName }
+                              );
                           } catch (Exception ignored) {}
 
                           ContentValues values = new ContentValues();
-                          values.put(MediaStore.Downloads.DISPLAY_NAME, displayFileName);
+                          values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
                           values.put(MediaStore.Downloads.MIME_TYPE, mimeType);
-                          values.put(MediaStore.Downloads.RELATIVE_PATH, subFolder);
-                          values.put(MediaStore.Downloads.IS_PENDING, 1);
-
-                          Uri collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
-                          Uri itemUri = resolver.insert(collection, values);
-                          if (itemUri != null) {
-                              try (OutputStream out = resolver.openOutputStream(itemUri);
-                                   FileInputStream in = new FileInputStream(sourceFile)) {
-                                  byte[] buf = new byte[65536];
-                                  int len;
-                                  while ((len = in.read(buf)) > 0) {
-                                      out.write(buf, 0, len);
-                                  }
+                          values.put(MediaStore.Downloads.RELATIVE_PATH, relPath);
+                          Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                          if (uri != null) {
+                              OutputStream out = getContentResolver().openOutputStream(uri);
+                              if (out != null) {
+                                  out.write(dataBytes);
                                   out.flush();
+                                  out.close();
                               }
-                              ContentValues updateValues = new ContentValues();
-                              updateValues.put(MediaStore.Downloads.IS_PENDING, 0);
-                              resolver.update(itemUri, updateValues, null, null);
-                              return itemUri;
+                              return uri;
                           }
                       }
-
-                      // Fallback для старіших Android (< 10)
-                      File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                      File baseDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                      File dir = (subFolder != null && !subFolder.isEmpty()) ? new File(baseDir, subFolder) : baseDir;
                       if (!dir.exists()) dir.mkdirs();
-                      File destFile = new File(dir, displayFileName);
-                      if (destFile.exists()) destFile.delete();
-                      try (FileOutputStream out = new FileOutputStream(destFile);
-                           FileInputStream in = new FileInputStream(sourceFile)) {
-                          byte[] buf = new byte[65536];
-                          int len;
-                          while ((len = in.read(buf)) > 0) {
-                              out.write(buf, 0, len);
-                          }
-                          out.flush();
+                      File file = new File(dir, fileName);
+                      FileOutputStream fos = new FileOutputStream(file);
+                      fos.write(dataBytes);
+                      fos.flush();
+                      fos.close();
+                      return Uri.fromFile(file);
+                  }
+
+                  private byte[] decodeBase64Data(String base64Data) {
+                      String pure = base64Data;
+                      int comma = base64Data.indexOf(',');
+                      if (comma != -1) {
+                          pure = base64Data.substring(comma + 1);
                       }
-                      return Uri.fromFile(destFile);
+                      return Base64.decode(pure, Base64.DEFAULT);
                   }
 
-                  private void closeCurrentStreamQuietly() {
+                  private String executeFileActionWithBytes(String fileName, byte[] bytes, String mimeType, String actionType, String title) {
                       try {
-                          if (currentStreamingFos != null) {
-                              currentStreamingFos.flush();
-                              currentStreamingFos.close();
-                          }
-                      } catch (Exception ignored) {}
-                      currentStreamingFos = null;
-                  }
-
-                  // 1. Початок потокової передачі (безпечно для великих Відео та PDF)
-                  @JavascriptInterface
-                  public String startFileStream(String fileName) {
-                      try {
-                          closeCurrentStreamQuietly();
-                          File cacheDir = getExternalCacheDir();
-                          if (cacheDir == null) cacheDir = getCacheDir();
-                          if (!cacheDir.exists()) cacheDir.mkdirs();
-                          currentStreamingFile = new File(cacheDir, "stream_temp.bin");
-                          if (currentStreamingFile.exists()) currentStreamingFile.delete();
-                          currentStreamingFos = new FileOutputStream(currentStreamingFile, true);
-                          return "OK";
-                      } catch (Exception e) {
-                          return "ERR:" + e.getMessage();
-                      }
-                  }
-
-                  // 2. Додавання порції Base64 (по ~512 КБ за раз, без OutOfMemoryError)
-                  @JavascriptInterface
-                  public String appendFileChunk(String base64Chunk) {
-                      try {
-                          if (currentStreamingFos == null) return "ERR:Stream not started";
-                          byte[] decoded = Base64.decode(base64Chunk, Base64.DEFAULT);
-                          currentStreamingFos.write(decoded);
-                          return "OK";
-                      } catch (Exception e) {
-                          return "ERR:" + e.getMessage();
-                      }
-                  }
-
-                  // 3. Завершення передачі та виконання дії: open / share / download
-                  @JavascriptInterface
-                  public String finishFileStream(String fileName, String mimeType, String actionType, String title) {
-                      try {
-                          closeCurrentStreamQuietly();
-                          if (currentStreamingFile == null || !currentStreamingFile.exists()) {
-                              return "ERR:Temp file missing";
-                          }
-                          boolean isDownload = "download".equalsIgnoreCase(actionType);
-                          Uri contentUri = exportFileToMediaStore(currentStreamingFile, fileName, mimeType, isDownload);
-                          currentStreamingFile.delete();
-
-                          if (isDownload) {
+                          if ("download".equals(actionType)) {
+                              writeBytesToMediaStore(fileName, bytes, mimeType, "");
                               return "OK";
-                          } else if ("open".equalsIgnoreCase(actionType)) {
+                          } else if ("open".equals(actionType)) {
+                              Uri uri = writeBytesToMediaStore(fileName, bytes, mimeType, "MedCard_Temp");
                               Intent viewIntent = new Intent(Intent.ACTION_VIEW);
-                              viewIntent.setDataAndType(contentUri, mimeType);
-                              viewIntent.setClipData(ClipData.newRawUri(fileName, contentUri));
+                              viewIntent.setDataAndType(uri, mimeType);
                               viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                               Intent chooser = Intent.createChooser(viewIntent, "Відкрити файл у додатку");
                               chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                               startActivity(chooser);
                               return "OK";
-                          } else if ("share".equalsIgnoreCase(actionType)) {
+                          } else if ("share".equals(actionType)) {
+                              Uri uri = writeBytesToMediaStore(fileName, bytes, mimeType, "MedCard_Temp");
                               Intent shareIntent = new Intent(Intent.ACTION_SEND);
                               shareIntent.setType(mimeType);
-                              shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                              shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
                               shareIntent.putExtra(Intent.EXTRA_SUBJECT, title != null ? title : fileName);
                               shareIntent.putExtra(Intent.EXTRA_TEXT, title != null ? title : fileName);
-                              shareIntent.setClipData(ClipData.newRawUri(fileName, contentUri));
                               shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                               Intent chooser = Intent.createChooser(shareIntent, "Поділитися файлом");
                               chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                               startActivity(chooser);
                               return "OK";
                           }
+                          return "ERR:Unknown action";
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  // --- ПОТОКОВА (ЧАНКОВА) ПЕРЕДАЧА ДЛЯ ВЕЛИКИХ PDF ТА ВІДЕО ---
+                  @JavascriptInterface
+                  public String startChunkedFile(String fileName, String mimeType) {
+                      try {
+                          chunkStream = new ByteArrayOutputStream();
+                          chunkFileName = fileName;
+                          chunkMimeType = mimeType;
                           return "OK";
                       } catch (Exception e) {
                           return "ERR:" + e.getMessage();
                       }
                   }
 
+                  @JavascriptInterface
+                  public String appendFileChunk(String base64Chunk) {
+                      try {
+                          if (chunkStream == null) chunkStream = new ByteArrayOutputStream();
+                          byte[] decoded = Base64.decode(base64Chunk, Base64.DEFAULT);
+                          chunkStream.write(decoded);
+                          return "OK";
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String finishChunkedFile(String actionType, String title) {
+                      try {
+                          if (chunkStream == null) return "ERR:No active stream";
+                          byte[] allBytes = chunkStream.toByteArray();
+                          chunkStream.close();
+                          chunkStream = null;
+                          return executeFileActionWithBytes(chunkFileName, allBytes, chunkMimeType, actionType, title);
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  // --- СТАНДАРТНІ МЕТОДИ ---
                   @JavascriptInterface
                   public String requestMicPermission() {
                       try {
@@ -301,15 +283,7 @@ jobs:
                   @JavascriptInterface
                   public String saveBackupToPhone(String fileName, String content) {
                       try {
-                          File cacheDir = getExternalCacheDir();
-                          if (cacheDir == null) cacheDir = getCacheDir();
-                          File temp = new File(cacheDir, "backup_temp.json");
-                          try (FileOutputStream fos = new FileOutputStream(temp)) {
-                              fos.write(content.getBytes(StandardCharsets.UTF_8));
-                              fos.flush();
-                          }
-                          exportFileToMediaStore(temp, fileName, "application/json", true);
-                          temp.delete();
+                          writeBytesToMediaStore(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json", "");
                           return "OK";
                       } catch (Exception e) {
                           return "ERR:" + e.getMessage();
@@ -320,22 +294,12 @@ jobs:
                   public String shareBackupFile(String fileName, String content) {
                       try {
                           String mime = fileName.endsWith(".html") ? "text/html" : (fileName.endsWith(".txt") ? "text/plain" : "application/json");
-                          File cacheDir = getExternalCacheDir();
-                          if (cacheDir == null) cacheDir = getCacheDir();
-                          File temp = new File(cacheDir, "share_temp.dat");
-                          try (FileOutputStream fos = new FileOutputStream(temp)) {
-                              fos.write(content.getBytes(StandardCharsets.UTF_8));
-                              fos.flush();
-                          }
-                          Uri uri = exportFileToMediaStore(temp, fileName, mime, false);
-                          temp.delete();
-
+                          Uri uri = writeBytesToMediaStore(fileName, content.getBytes(StandardCharsets.UTF_8), mime, "MedCard_Temp");
                           Intent shareIntent = new Intent(Intent.ACTION_SEND);
                           shareIntent.setType(mime);
                           shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
                           shareIntent.putExtra(Intent.EXTRA_SUBJECT, fileName);
                           shareIntent.putExtra(Intent.EXTRA_TEXT, "Сімейна Медкартка PRO (" + fileName + ")");
-                          shareIntent.setClipData(ClipData.newRawUri(fileName, uri));
                           shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                           Intent chooser = Intent.createChooser(shareIntent, "Зберегти або переслати файл");
                           chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -344,6 +308,24 @@ jobs:
                       } catch (Exception e) {
                           return "ERR:" + e.getMessage();
                       }
+                  }
+
+                  @JavascriptInterface
+                  public String saveBinaryFile(String fileName, String base64Data, String mimeType) {
+                      byte[] bytes = decodeBase64Data(base64Data);
+                      return executeFileActionWithBytes(fileName, bytes, mimeType, "download", fileName);
+                  }
+
+                  @JavascriptInterface
+                  public String openBinaryFile(String fileName, String base64Data, String mimeType) {
+                      byte[] bytes = decodeBase64Data(base64Data);
+                      return executeFileActionWithBytes(fileName, bytes, mimeType, "open", fileName);
+                  }
+
+                  @JavascriptInterface
+                  public String shareBinaryFile(String fileName, String base64Data, String mimeType, String title) {
+                      byte[] bytes = decodeBase64Data(base64Data);
+                      return executeFileActionWithBytes(fileName, bytes, mimeType, "share", title);
                   }
               }
           }
