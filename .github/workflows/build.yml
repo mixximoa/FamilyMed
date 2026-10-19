@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,44 +18,33 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install Cordova & ImageMagick
+      - name: Ensure Android SDK 34 & 35 are installed
         run: |
-          npm install -g cordova
-          sudo apt-get update && sudo apt-get install -y imagemagick
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" "platforms;android-35" "build-tools;34.0.0" "build-tools;35.0.0"
 
-      - name: Create Cordova Project & Add Plugins
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova Project
         run: |
-          cordova create myapp com.family.medcard "Сімейна Медкартка"
+          cordova create myapp com.family.medcard FamilyMed
           cd myapp
           cordova platform add android
-          cordova plugin add cordova-plugin-file
-          cordova plugin add cordova-plugin-x-socialsharing
 
-      - name: Generate Medical App Icon & Configure Cordova
+      - name: Create Medical App Icon & Set App Name
         run: |
-          if [ -f "icon.png" ]; then
-            cp icon.png myapp/icon.png
-          else
-            # Автоматично малюємо красиву медичну іконку 512x512 (синьо-бірюзовий фон + білий медичний хрест)
-            convert -size 512x512 xc:none \
-              -fill "#0284c7" -draw "roundrectangle 0,0,512,512,110,110" \
-              -fill "#0d9488" -draw "roundrectangle 24,24,488,488,95,95" \
-              -fill "#ffffff" -draw "roundrectangle 206,106,306,406,25,25" \
-              -fill "#ffffff" -draw "roundrectangle 106,206,406,306,25,25" \
-              myapp/icon.png
-          fi
-          # Додаємо іконку та дозволи у config.xml
-          sed -i 's|</widget>|  <icon src="icon.png" />\n  <preference name="AndroidPersistentFileLocation" value="Compatibility" />\n</widget>|g' myapp/config.xml
+          sudo apt-get update && sudo apt-get install -y imagemagick
+          convert -size 512x512 xc:"#0284c7" -fill "#ffffff" -draw "rectangle 206,96 306,416" -draw "rectangle 96,206 416,306" myapp/icon.png
+          sed -i 's|<name>FamilyMed</name>|<name>Медкартка PRO</name>|g' myapp/config.xml
+          sed -i 's|</widget>|  <icon src="icon.png" />\n</widget>|g' myapp/config.xml
 
-      - name: Copy web app files
+      - name: Copy index.html
         run: |
           rm -rf myapp/www/*
           cp index.html myapp/www/
