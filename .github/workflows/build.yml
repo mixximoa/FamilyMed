@@ -37,7 +37,14 @@ jobs:
           cd myapp
           cordova platform add android
 
-      - name: Inject Native Chunked File & Video Stream Bridge into MainActivity.java
+      - name: Enable largeHeap in AndroidManifest.xml
+        run: |
+          MANIFEST="myapp/platforms/android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST" ]; then
+            sed -i 's/<application /<application android:largeHeap="true" /g' "$MANIFEST"
+          fi
+
+      - name: Inject Native Android File, Chunked Video Stream, PDF & Share Bridge into MainActivity.java
         run: |
           cat << 'EOF' > myapp/platforms/android/app/src/main/java/com/family/medcard/MainActivity.java
           package com.family.medcard;
@@ -47,7 +54,6 @@ jobs:
           import android.webkit.WebView;
           import android.webkit.JavascriptInterface;
           import android.content.Intent;
-          import android.content.ClipData;
           import android.content.ContentValues;
           import android.net.Uri;
           import android.os.Build;
@@ -59,6 +65,7 @@ jobs:
           import java.io.File;
           import java.io.FileInputStream;
           import java.io.FileOutputStream;
+          import java.io.BufferedOutputStream;
           import java.nio.charset.StandardCharsets;
           import org.apache.cordova.*;
 
@@ -81,8 +88,8 @@ jobs:
                       webView.getSettings().setAllowContentAccess(true);
                       webView.getSettings().setAllowFileAccessFromFileURLs(true);
                       webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
-                      webView.getSettings().setDomStorageEnabled(true);
                       webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+                      webView.getSettings().setDomStorageEnabled(true);
                       webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
                   } catch (Exception e) {
                       e.printStackTrace();
@@ -90,13 +97,17 @@ jobs:
               }
 
               public class WebAppInterface {
-                  private File getMediaStorageDir() {
+                  private File currentStreamingFile = null;
+                  private BufferedOutputStream currentStreamOut = null;
+
+                  private File getAppMediaDir() {
                       File dir = new File(getExternalFilesDir(null), "MedMedia");
                       if (!dir.exists()) dir.mkdirs();
                       return dir;
                   }
 
-                  private byte[] decodeBase64Chunk(String base64Data) {
+                  private byte[] decodeBase64Data(String base64Data) {
+                      if (base64Data == null || base64Data.isEmpty()) return new byte[0];
                       String pure = base64Data;
                       int comma = base64Data.indexOf(',');
                       if (comma != -1) {
@@ -105,116 +116,111 @@ jobs:
                       return Base64.decode(pure, Base64.DEFAULT);
                   }
 
-                  // 1. CHUNKED UPLOAD FOR LARGE VIDEOS & FILES (250MB+ support without OOM)
+                  private Uri writeBytesToDownloads(String fileName, byte[] dataBytes, String mimeType) throws Exception {
+                      if (dataBytes == null || dataBytes.length == 0) {
+                          throw new Exception("Файл порожній (0 байт)");
+                      }
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                          ContentValues values = new ContentValues();
+                          values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+                          values.put(MediaStore.Downloads.MIME_TYPE, mimeType);
+                          values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                          values.put(MediaStore.MediaColumns.IS_PENDING, 1);
+
+                          Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                          if (uri != null) {
+                              OutputStream out = getContentResolver().openOutputStream(uri);
+                              if (out != null) {
+                                  out.write(dataBytes);
+                                  out.flush();
+                                  out.close();
+                              }
+                              ContentValues updateValues = new ContentValues();
+                              updateValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                              getContentResolver().update(uri, updateValues, null, null);
+                              return uri;
+                          }
+                      }
+                      File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                      if (!dir.exists()) dir.mkdirs();
+                      File file = new File(dir, fileName);
+                      FileOutputStream fos = new FileOutputStream(file);
+                      fos.write(dataBytes);
+                      fos.flush();
+                      fos.close();
+                      return Uri.fromFile(file);
+                  }
+
+                  private Uri copyFileToDownloads(File sourceFile, String fileName, String mimeType) throws Exception {
+                      if (sourceFile == null || !sourceFile.exists() || sourceFile.length() == 0) {
+                          throw new Exception("Вихідний медіафайл не знайдено або він порожній");
+                      }
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                          ContentValues values = new ContentValues();
+                          values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+                          values.put(MediaStore.Downloads.MIME_TYPE, mimeType);
+                          values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                          values.put(MediaStore.MediaColumns.IS_PENDING, 1);
+
+                          Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                          if (uri != null) {
+                              InputStream in = new FileInputStream(sourceFile);
+                              OutputStream out = getContentResolver().openOutputStream(uri);
+                              if (out != null) {
+                                  byte[] buf = new byte[65536];
+                                  int len;
+                                  while ((len = in.read(buf)) > 0) {
+                                      out.write(buf, 0, len);
+                                  }
+                                  out.flush();
+                                  out.close();
+                              }
+                              in.close();
+                              ContentValues updateValues = new ContentValues();
+                              updateValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                              getContentResolver().update(uri, updateValues, null, null);
+                              return uri;
+                          }
+                      }
+                      File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                      if (!dir.exists()) dir.mkdirs();
+                      File destFile = new File(dir, fileName);
+                      InputStream in = new FileInputStream(sourceFile);
+                      FileOutputStream fos = new FileOutputStream(destFile);
+                      byte[] buf = new byte[65536];
+                      int len;
+                      while ((len = in.read(buf)) > 0) {
+                          fos.write(buf, 0, len);
+                      }
+                      fos.flush();
+                      fos.close();
+                      in.close();
+                      return Uri.fromFile(destFile);
+                  }
+
+                  /* --- CHUNKED STREAMING API FOR LARGE VIDEOS & FILES (250MB+) --- */
                   @JavascriptInterface
-                  public String writeMediaChunk(String storedFileName, String base64Chunk, boolean append) {
+                  public String startChunkedMedia(String fileName) {
                       try {
-                          File outFile = new File(getMediaStorageDir(), storedFileName);
-                          FileOutputStream fos = new FileOutputStream(outFile, append);
-                          byte[] bytes = decodeBase64Chunk(base64Chunk);
-                          fos.write(bytes);
-                          fos.flush();
-                          fos.close();
-                          return Uri.fromFile(outFile).toString();
+                          if (currentStreamOut != null) {
+                              try { currentStreamOut.close(); } catch (Exception ignored) {}
+                          }
+                          String safeName = System.currentTimeMillis() + "_" + fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+                          currentStreamingFile = new File(getAppMediaDir(), safeName);
+                          currentStreamOut = new BufferedOutputStream(new FileOutputStream(currentStreamingFile), 65536);
+                          return "OK";
                       } catch (Throwable t) {
                           return "ERR:" + t.getMessage();
                       }
                   }
 
                   @JavascriptInterface
-                  public String getNativeMediaUri(String storedFileName) {
-                      File f = new File(getMediaStorageDir(), storedFileName);
-                      if (f.exists() && f.length() > 0) {
-                          return Uri.fromFile(f).toString();
-                      }
-                      return "";
-                  }
-
-                  // Copy internal stored file to public Downloads and return Content Uri
-                  private Uri copyFileToPublicDownloads(File sourceFile, String displayFileName, String mimeType) throws Exception {
-                      String finalName = displayFileName;
-                      int dot = displayFileName.lastIndexOf('.');
-                      String base = (dot != -1) ? displayFileName.substring(0, dot) : displayFileName;
-                      String ext = (dot != -1) ? displayFileName.substring(dot) : "";
-                      // Add timestamp suffix to avoid MediaStore duplicate name conflicts
-                      finalName = base + "_" + (System.currentTimeMillis() % 100000) + ext;
-
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                          ContentValues values = new ContentValues();
-                          values.put(MediaStore.Downloads.DISPLAY_NAME, finalName);
-                          values.put(MediaStore.Downloads.MIME_TYPE, mimeType);
-                          values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-                          values.put(MediaStore.Downloads.IS_PENDING, 1);
-
-                          Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                          if (uri != null) {
-                              OutputStream out = getContentResolver().openOutputStream(uri);
-                              FileInputStream in = new FileInputStream(sourceFile);
-                              byte[] buf = new byte[65536];
-                              int len;
-                              while ((len = in.read(buf)) > 0) {
-                                  out.write(buf, 0, len);
-                              }
-                              in.close();
-                              out.flush();
-                              out.close();
-
-                              values.clear();
-                              values.put(MediaStore.Downloads.IS_PENDING, 0);
-                              getContentResolver().update(uri, values, null, null);
-                              return uri;
-                          }
-                      }
-
-                      File dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                      if (!dlDir.exists()) dlDir.mkdirs();
-                      File dest = new File(dlDir, finalName);
-                      FileInputStream in = new FileInputStream(sourceFile);
-                      FileOutputStream out = new FileOutputStream(dest);
-                      byte[] buf = new byte[65536];
-                      int len;
-                      while ((len = in.read(buf)) > 0) {
-                          out.write(buf, 0, len);
-                      }
-                      in.close();
-                      out.flush();
-                      out.close();
-                      return Uri.fromFile(dest);
-                  }
-
-                  @JavascriptInterface
-                  public String executeStoredFileAction(String storedFileName, String displayFileName, String mimeType, String actionType, String title) {
+                  public String appendChunkedMedia(String base64Chunk) {
                       try {
-                          File src = new File(getMediaStorageDir(), storedFileName);
-                          if (!src.exists() || src.length() == 0) {
-                              return "ERR:Файл порожній або не знайдений. Прикріпіть його заново.";
-                          }
-                          Uri publicUri = copyFileToPublicDownloads(src, displayFileName, mimeType);
-                          if (actionType.equals("download")) {
-                              return "OK";
-                          } else if (actionType.equals("open")) {
-                              Intent viewIntent = new Intent(Intent.ACTION_VIEW);
-                              viewIntent.setDataAndType(publicUri, mimeType);
-                              viewIntent.setClipData(ClipData.newRawUri("", publicUri));
-                              viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                              Intent chooser = Intent.createChooser(viewIntent, "Відкрити файл у додатку");
-                              chooser.setClipData(ClipData.newRawUri("", publicUri));
-                              chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                              startActivity(chooser);
-                              return "OK";
-                          } else if (actionType.equals("share")) {
-                              Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                              shareIntent.setType(mimeType);
-                              shareIntent.putExtra(Intent.EXTRA_STREAM, publicUri);
-                              shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
-                              shareIntent.putExtra(Intent.EXTRA_TEXT, title);
-                              shareIntent.setClipData(ClipData.newRawUri("", publicUri));
-                              shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                              Intent chooser = Intent.createChooser(shareIntent, "Поділитися файлом");
-                              chooser.setClipData(ClipData.newRawUri("", publicUri));
-                              chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-                              startActivity(chooser);
-                              return "OK";
+                          if (currentStreamOut == null) return "ERR:Stream not started";
+                          byte[] chunkBytes = decodeBase64Data(base64Chunk);
+                          if (chunkBytes.length > 0) {
+                              currentStreamOut.write(chunkBytes);
                           }
                           return "OK";
                       } catch (Throwable t) {
@@ -223,14 +229,76 @@ jobs:
                   }
 
                   @JavascriptInterface
+                  public String finishChunkedMedia() {
+                      try {
+                          if (currentStreamOut != null) {
+                              currentStreamOut.flush();
+                              currentStreamOut.close();
+                              currentStreamOut = null;
+                          }
+                          if (currentStreamingFile != null && currentStreamingFile.exists() && currentStreamingFile.length() > 0) {
+                              return currentStreamingFile.getAbsolutePath();
+                          }
+                          return "ERR:Empty file after stream";
+                      } catch (Throwable t) {
+                          return "ERR:" + t.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String saveNativeFileToDownloads(String nativePath, String fileName, String mimeType) {
+                      try {
+                          File src = new File(nativePath);
+                          copyFileToDownloads(src, fileName, mimeType);
+                          return "OK";
+                      } catch (Throwable t) {
+                          return "ERR:" + t.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String openNativeFile(String nativePath, String fileName, String mimeType) {
+                      try {
+                          File src = new File(nativePath);
+                          Uri uri = copyFileToDownloads(src, fileName, mimeType);
+                          Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                          viewIntent.setDataAndType(uri, mimeType);
+                          viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          viewIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          Intent chooser = Intent.createChooser(viewIntent, "Відкрити у додатку / плеєрі");
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          startActivity(chooser);
+                          return "OK";
+                      } catch (Throwable t) {
+                          return "ERR:" + t.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String shareNativeFile(String nativePath, String fileName, String mimeType, String title) {
+                      try {
+                          File src = new File(nativePath);
+                          Uri uri = copyFileToDownloads(src, fileName, mimeType);
+                          Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                          shareIntent.setType(mimeType);
+                          shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                          shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+                          shareIntent.putExtra(Intent.EXTRA_TEXT, title);
+                          shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          Intent chooser = Intent.createChooser(shareIntent, "Поділитися файлом");
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          startActivity(chooser);
+                          return "OK";
+                      } catch (Throwable t) {
+                          return "ERR:" + t.getMessage();
+                      }
+                  }
+
+                  /* --- STANDARD API FOR BACKUPS & SMALL FILES --- */
+                  @JavascriptInterface
                   public String saveBackupToPhone(String fileName, String content) {
                       try {
-                          File tmp = new File(getMediaStorageDir(), "temp_backup.json");
-                          FileOutputStream fos = new FileOutputStream(tmp, false);
-                          fos.write(content.getBytes(StandardCharsets.UTF_8));
-                          fos.flush();
-                          fos.close();
-                          copyFileToPublicDownloads(tmp, fileName, "application/json");
+                          writeBytesToDownloads(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json");
                           return "OK";
                       } catch (Throwable e) {
                           return "ERR:" + e.getMessage();
@@ -240,22 +308,64 @@ jobs:
                   @JavascriptInterface
                   public String shareBackupFile(String fileName, String content) {
                       try {
-                          File tmp = new File(getMediaStorageDir(), "temp_backup.json");
-                          FileOutputStream fos = new FileOutputStream(tmp, false);
-                          fos.write(content.getBytes(StandardCharsets.UTF_8));
-                          fos.flush();
-                          fos.close();
-                          Uri uri = copyFileToPublicDownloads(tmp, fileName, "application/json");
+                          Uri uri = writeBytesToDownloads(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json");
                           Intent shareIntent = new Intent(Intent.ACTION_SEND);
                           shareIntent.setType("application/json");
                           shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
                           shareIntent.putExtra(Intent.EXTRA_SUBJECT, fileName);
                           shareIntent.putExtra(Intent.EXTRA_TEXT, "Резервна копія Сімейна Медкартка PRO (" + fileName + ")");
-                          shareIntent.setClipData(ClipData.newRawUri("", uri));
-                          shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                          shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                           Intent chooser = Intent.createChooser(shareIntent, "Зберегти на Google Диск або переслати");
-                          chooser.setClipData(ClipData.newRawUri("", uri));
-                          chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          startActivity(chooser);
+                          return "OK";
+                      } catch (Throwable e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String saveBinaryFile(String fileName, String base64Data, String mimeType) {
+                      try {
+                          byte[] bytes = decodeBase64Data(base64Data);
+                          writeBytesToDownloads(fileName, bytes, mimeType);
+                          return "OK";
+                      } catch (Throwable e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String openBinaryFile(String fileName, String base64Data, String mimeType) {
+                      try {
+                          byte[] bytes = decodeBase64Data(base64Data);
+                          Uri uri = writeBytesToDownloads(fileName, bytes, mimeType);
+                          Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                          viewIntent.setDataAndType(uri, mimeType);
+                          viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          viewIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          Intent chooser = Intent.createChooser(viewIntent, "Відкрити файл у додатку");
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          startActivity(chooser);
+                          return "OK";
+                      } catch (Throwable e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String shareBinaryFile(String fileName, String base64Data, String mimeType, String title) {
+                      try {
+                          byte[] bytes = decodeBase64Data(base64Data);
+                          Uri uri = writeBytesToDownloads(fileName, bytes, mimeType);
+                          Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                          shareIntent.setType(mimeType);
+                          shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                          shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+                          shareIntent.putExtra(Intent.EXTRA_TEXT, title);
+                          shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          Intent chooser = Intent.createChooser(shareIntent, "Поділитися файлом");
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                           startActivity(chooser);
                           return "OK";
                       } catch (Throwable e) {
