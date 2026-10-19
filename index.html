@@ -2,9 +2,11 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Сімейна Медкартка PRO</title>
     <script src="cordova.js"></script>
+    <!-- Підключення PDF.js для вбудованого перегляду та масштабування PDF-сторінок -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         :root {
             --primary: #0284c7;
@@ -87,6 +89,8 @@
         .btn-success { background: var(--success); color: white; }
         .btn-outline { background: transparent; border: 1.5px solid var(--primary); color: var(--primary); }
         .btn-sm { padding: 7px 12px; font-size: 0.78rem; border-radius: 8px; width: auto; margin-top: 0; }
+        .btn-xs { padding: 5px 9px; font-size: 0.73rem; border-radius: 7px; width: auto; margin-top: 0; font-weight: 700; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-xs:active { transform: scale(0.95); background: var(--primary-light); }
 
         input, select, textarea { width: 100%; padding: 11px 12px; margin: 5px 0 12px 0; border: 1.5px solid var(--border); border-radius: 10px; font-size: 0.95rem; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.2s; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
@@ -127,11 +131,15 @@
         .search-history-box { display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-top: -6px; margin-bottom: 10px; box-shadow: var(--shadow); }
         .history-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); padding: 4px 10px; border-radius: 14px; font-size: 0.78rem; margin: 3px; cursor: pointer; color: var(--text); border: 1px solid var(--border); }
 
+        /* Media & Attachment Rows */
         .media-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-top: 8px; display: flex; gap: 10px; align-items: center; }
-        .thumb-box { position: relative; width: 62px; height: 62px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #0f172a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
+        .attachment-row { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+        .attachment-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .attachment-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .thumb-box { position: relative; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: #0f172a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.75rem; cursor: pointer; }
         .thumb { width: 100%; height: 100%; object-fit: cover; }
-        .audio-item { background: var(--bg); padding: 8px 10px; border-radius: 10px; margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--border); }
-        .audio-item audio { height: 34px; max-width: 190px; }
+        .audio-item { background: var(--bg); padding: 8px 10px; border-radius: 10px; margin-top: 6px; display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--border); }
+        .audio-item audio { height: 36px; width: 100%; }
 
         .timeline-container { position: relative; padding-left: 22px; border-left: 3px solid var(--primary); margin-top: 14px; margin-left: 8px; }
         .timeline-item { position: relative; margin-bottom: 18px; }
@@ -151,6 +159,18 @@
         .modal.center-modal .modal-content { border-radius: 20px; max-width: 420px; animation: popIn 0.2s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* Full-Screen Interactive Zoom & PDF/Video Viewer Modal */
+        #mediaViewerModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #090d16; z-index: 2500; display: none; flex-direction: column; justify-content: space-between; overflow: hidden; }
+        .viewer-topbar { background: rgba(15, 23, 42, 0.92); color: white; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; z-index: 20; border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .viewer-title-box { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 700; }
+        .viewer-stage { flex: 1; width: 100%; height: 100%; position: relative; overflow: auto; display: flex; align-items: center; justify-content: center; touch-action: none; }
+        .viewer-stage.scrollable-pdf { touch-action: pan-x pan-y; align-items: flex-start; justify-content: flex-start; padding: 12px; }
+        #zoomableImage { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center center; transition: transform 0.05s linear; user-select: none; -webkit-user-drag: none; }
+        .viewer-bottombar { background: rgba(15, 23, 42, 0.95); color: white; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; z-index: 20; border-top: 1px solid rgba(255,255,255,0.12); }
+        .viewer-controls-row { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .v-ctrl-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 8px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+        .v-ctrl-btn:active { background: var(--primary); }
 
         #toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 3000; width: 92%; max-width: 400px; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
         .toast { background: #1e293b; color: white; padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 10px; animation: toastIn 0.3s ease; border-left: 5px solid var(--success); }
@@ -450,7 +470,6 @@
 
         <!-- TAB 7: SETTINGS, BACKUP & MIGRATION CENTER -->
         <div id="tab-settings" class="tab-content" style="display: none;">
-            <!-- 1. BACKUP & SCHEDULE CARD -->
             <div class="card" style="border: 2px solid var(--primary);">
                 <h3>☁️ Резервне копіювання (Телефон + Google Диск)</h3>
                 <p id="lastBackupInfo" style="font-weight:700; color:var(--primary); margin-bottom:8px;">Останній бекап: ще не виконувався</p>
@@ -469,8 +488,8 @@
                     <button class="btn btn-teal" onclick="shareBackupToCloud()">☁️ На Google Диск</button>
                 </div>
                 <p style="font-size:0.78rem; margin-top:8px;">
-                    ✅ <b>«📱 У телефон (Download)»</b> — миттєво записує файл бази <code>.json</code> прямо у папку <b>Завантаження (Download)</b> вашого смартфона.<br>
-                    ✅ <b>«☁️ На Google Диск»</b> — створює файл і відкриває системне меню Android: оберіть іконку <b>Диск (Google Drive)</b> і натисніть «Зберегти»!
+                    ✅ <b>«📱 У телефон (Download)»</b> — записує файл бази <code>.json</code> у папку <b>Завантаження (Download)</b>.<br>
+                    ✅ <b>«☁️ На Google Диск»</b> — відкриває системне меню Android: оберіть <b>Диск (Google Drive)</b>!
                 </p>
 
                 <div class="divider"></div>
@@ -479,7 +498,6 @@
                 <input type="file" id="importFile" accept=".json,application/json,text/plain,*/*" style="display: none;" onchange="importData(event)">
             </div>
 
-            <!-- 2. MIGRATION & EXPORT CENTER CARD (NEW!) -->
             <div class="card" style="border: 2px solid var(--purple);">
                 <h3>📦 Центр перенесення та експорту даних</h3>
                 <p>Інструменти для переїзду на новий смартфон, об'єднання баз із телефоном дружини/чоловіка або створення текстового звіту для лікаря.</p>
@@ -490,7 +508,6 @@
                 </div>
             </div>
 
-            <!-- 3. APPEARANCE & CUSTOM TAGS -->
             <div class="card">
                 <h3>🎨 Зовнішній вигляд та Налаштування</h3>
                 <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0;">
@@ -518,7 +535,32 @@
         </div>
     </div>
 
-    <!-- MODAL: MIGRATION & EXPORT CENTER (МАЙСТЕР ПЕРЕНЕСЕННЯ НА НОВИЙ ТЕЛЕФОН) -->
+    <!-- FULL-SCREEN INTERACTIVE MEDIA VIEWER (ZOOM PHOTO, MULTI-PAGE PDF, VIDEO) -->
+    <div id="mediaViewerModal">
+        <div class="viewer-topbar">
+            <div class="viewer-title-box" id="viewerTitleText">Перегляд файлу</div>
+            <button class="v-ctrl-btn" style="background:var(--danger); border:none;" onclick="closeModals()">✖ Закрити</button>
+        </div>
+
+        <div class="viewer-stage" id="viewerStage">
+            <!-- Dynamic Content: Zoomable Image, PDF Pages, or Video Player -->
+        </div>
+
+        <div class="viewer-bottombar">
+            <div class="viewer-controls-row" id="viewerZoomControls">
+                <button class="v-ctrl-btn" onclick="adjustViewerZoom(-0.5)">➖ Зменшити</button>
+                <button class="v-ctrl-btn" id="zoomLevelIndicator" onclick="resetViewerZoom()">100%</button>
+                <button class="v-ctrl-btn" onclick="adjustViewerZoom(0.6)">➕ Збільшити</button>
+            </div>
+            <div class="viewer-controls-row">
+                <button class="v-ctrl-btn" style="background:var(--primary); border:none;" onclick="openCurrentMediaExternally()">📱 Відкрити в іншому додатку</button>
+                <button class="v-ctrl-btn" style="background:var(--teal); border:none;" onclick="shareCurrentMedia()">📤 Поділитися</button>
+                <button class="v-ctrl-btn" style="background:var(--purple); border:none;" onclick="downloadCurrentMedia()">⬇️ Скачати</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MIGRATION & EXPORT CENTER -->
     <div id="migrationModal" class="modal">
         <div class="modal-content">
             <h3>📦 Майстер перенесення даних на новий телефон</h3>
@@ -683,7 +725,7 @@
             <label>Категорія / Призначення</label>
             <select id="cabCategory">
                 <option value="🌡 Жарознижувальне / Застуда">🌡 Жарознижувальне / Застуда</option>
-                <option value="💊 Знеболювальне / Спазми">💊 Знеболюлювальне / Спазми</option>
+                <option value="💊 Знеболювальне / Спазми">💊 Знеболювальне / Спазми</option>
                 <option value="🤢 Шлунок / Травлення">🤢 Шлунок / Травлення</option>
                 <option value="🩹 Антисептики / Перев'язка">🩹 Антисептики / Перев'язка</option>
                 <option value="🤧 Алергія">🤧 Алергія</option>
@@ -831,8 +873,8 @@
             <input type="text" id="hTags" placeholder="#самолікування #продуло">
             <div id="hTagChips" class="chips-container"></div>
 
-            <label>📎 Фото (напр. висипка, показники термометра, чек чи коробка ліків)</label>
-            <input type="file" id="hMediaFilePicker" accept="image/*,application/pdf" multiple onchange="addNewMediaItem(this, 'hMediaItemsList')">
+            <label>📎 Фото або PDF (напр. висипка, термометр, чек чи інструкція)</label>
+            <input type="file" id="hMediaFilePicker" accept="image/*,video/*,application/pdf" multiple onchange="addNewMediaItem(this, 'hMediaItemsList')">
             <div id="hMediaItemsList"></div>
             
             <button class="btn btn-teal" onclick="saveHomeIllness()" style="margin-top:16px;">✅ Зберегти запис</button>
@@ -865,69 +907,50 @@
         </div>
     </div>
 
-    <!-- MODAL: COMPREHENSIVE HELP & USER GUIDE (ДОВІДКА А-Я) -->
+    <!-- MODAL: COMPREHENSIVE HELP & USER GUIDE -->
     <div id="helpModal" class="modal">
         <div class="modal-content">
             <h3>📖 Повна довідка «Сімейна Медкартка PRO»</h3>
             <p style="font-size:0.84rem; color:var(--text-light); margin-bottom:12px;">Детальний путівник по всіх можливостях програми для вашої родини.</p>
 
             <div class="help-section">
-                <h4>👨‍👩‍👧‍👦 1. Профілі сім'ї та «Картка для лікаря» (🆘)</h4>
+                <h4>🖼️ 1. Збільшення фото, перегляд PDF, Відео та Поділитися</h4>
                 <ul>
-                    <li>У вкладці <b>«Сім'я»</b> створіть картку для кожного члена родини: оберіть емодзі або завантажте фото з телефона, вкажіть дату народження (програма сама рахуватиме точний вік), групу крові, алергії та хронічні стани.</li>
-                    <li>Кнопка <b>«🆘 Картка для лікаря»</b> відкриває на весь екран зручну шпаргалку великим шрифтом: група крові, алергії на ліки та останні звернення. Просто покажіть цей екран лікарю на прийомі!</li>
+                    <li><b>Збільшення дрібного шрифту на фото:</b> натисніть на будь-яке фото або кнопку <code>🔍 Збільшити</code> — відкриється повноекранний переглядач. Розводьте зображення двома пальцями (Pinch-to-Zoom), натискайте двічі по екрану або користуйтеся кнопками <code>➕</code> / <code>➖</code> (масштабування до 800%) та перетягуйте документ пальцем.</li>
+                    <li><b>Читання PDF-файлів:</b> при натисканні на PDF програма розгортає всі сторінки документа прямо на екрані з можливістю масштабування, або дозволяє натиснути <code>📱 Відкрити в іншому додатку</code>, щоб відкрити PDF у системній читалці телефона.</li>
+                    <li><b>Кнопки на кожному файлі:</b> біля кожного фото, PDF, відео чи запису диктофона є кнопки <code>📤 Поділитися</code> (відправка у Viber, Telegram, WhatsApp), <code>📱 Відкрити</code> та <code>⬇️ Скачати</code> (зберігає файл у папку Завантаження).</li>
                 </ul>
             </div>
 
             <div class="help-section">
-                <h4>📋 2. Журнал візитів та Домашні недуги</h4>
+                <h4>👨‍👩‍👧‍👦 2. Профілі сім'ї та «Картка для лікаря» (🆘)</h4>
                 <ul>
-                    <li><b>«🩺 Візит до лікаря»</b> — використовуйте для записів офіційних прийомів, консультацій, УЗД, рентгену чи здачі аналізів. Можна прикріпити необмежену кількість фото виписок, PDF-файлів та записати розмову з лікарем на вбудований диктофон.</li>
-                    <li><b>«🏠 Домашня недуга»</b> — використовуйте, коли хтось захворів удома без походу до лікаря (застуда, температура, герпес, розлад шлунку), щоб пам'ятати, коли це було і які ліки допомогли.</li>
+                    <li>У вкладці <b>«Сім'я»</b> створіть картку для кожного члена родини: оберіть емодзі або завантажте фото, вкажіть дату народження, групу крові, алергії та хронічні стани.</li>
+                    <li>Кнопка <b>«🆘 Картка для лікаря»</b> відкриває на весь екран шпаргалку великим шрифтом для швидкого показу лікарю на прийомі.</li>
                 </ul>
             </div>
 
             <div class="help-section">
-                <h4>🔍 3. Розумний пошук за датами, словами та #хештегами</h4>
+                <h4>🔍 3. Розумний пошук за датами (`2025`, `2024.10`), словами та #хештегами</h4>
                 <ul>
-                    <li>У полі пошуку в «Журналі» або «Файлах» можна вводити будь-що: прізвище лікаря, назву клініки, симптом, діагноз або назву препарату.</li>
-                    <li><b>Пошук за датою:</b> введіть <code>2025</code> (покаже всі записи за 2025 рік), або <code>2024.10</code> чи <code>10.2024</code> (покаже записи за жовтень 2024 року), або просто слово <code>жовтень</code>. Також можна обрати рік у випадаючому списку.</li>
-                    <li><b>Хештеги:</b> натискайте на кольорові чіпси (напр. <code>#аналізи</code>, <code>#рентген</code>, <code>#самолікування</code>) під час створення запису або додавайте власні теги в меню налаштувань.</li>
+                    <li><b>Пошук за датою:</b> введіть у пошук <code>2025</code> (покаже всі записи за 2025 рік), або <code>2024.10</code> чи <code>10.2024</code> (покаже записи за жовтень 2024 року), або просто слово <code>жовтень</code>.</li>
+                    <li><b>Хештеги:</b> натискайте на кольорові чіпси (напр. <code>#аналізи</code>, <code>#рентген</code>, <code>#самолікування</code>) для миттєвої фільтрації.</li>
                 </ul>
             </div>
 
             <div class="help-section">
-                <h4>💊 4. Трекер прийому ліків та Таймер нагадувань</h4>
+                <h4>💊 4. Трекер ліків, Таймер та Домашня аптечка</h4>
                 <ul>
-                    <li>У вкладці <b>«Ліки й Аптечка -> 📅 Трекер прийому»</b> додайте призначений курс таблеток чи сиропу, вкажіть дозування та часи прийому (Ранок, Обід, Вечір, Ніч).</li>
-                    <li>Щодня натискайте на кнопки прийомів — вони стають зеленими (✅), а смужка знизу показує загальний прогрес курсу.</li>
-                    <li><b>Таймер наступної таблетки:</b> у блоці «🔔 Нагадати про наступний прийом» натисніть <code>+4 год</code>, <code>+6 год</code>, <code>+8 год</code> або виберіть точний час. Коли час настане, телефон подасть звуковий сигнал і покаже вікно нагадування. Кнопка <b>«📅 У календар телефона»</b> дублює нагадування в системний органайзер Android.</li>
+                    <li>У <b>«📅 Трекері прийому»</b> відмічайте випиті таблетки та ставте таймер наступного прийому (<code>+4 год</code>, <code>+6 год</code>, <code>+8 год</code> або точний час).</li>
+                    <li>У <b>«🧰 Домашній аптечці»</b> ведіть ревізію домашніх медикаментів — програма попередить, коли термін придатності добігає кінця (🟡) або вже вийшов (🔴).</li>
                 </ul>
             </div>
 
             <div class="help-section">
-                <h4>🧰 5. Домашня аптечка та контроль термінів придатності</h4>
+                <h4>☁️ 5. Резервне копіювання та Переїзд на новий телефон</h4>
                 <ul>
-                    <li>Перемкніться на підвкладку <b>«🧰 Домашня аптечка»</b>, щоб записати всі ліки, які є вдома, де саме вони лежать і до якого місяця/року придатні.</li>
-                    <li>Програма автоматично підсвічує препарати: 🟢 <b>Придатний</b>, 🟡 <b>Скоро виходить термін</b> (менше 60 днів) та 🔴 <b>ПРОСТРОЧЕНО</b> (час списати і викинути).</li>
-                </ul>
-            </div>
-
-            <div class="help-section">
-                <h4>📊 6. Бухгалтерія витрат та Інтерактивна аналітика</h4>
-                <ul>
-                    <li>Вказуйте вартість прийому/аналізів та вартість куплених ліків у гривнях.</li>
-                    <li>У вкладці <b>«Аналітика»</b> ви бачите загальну суму витрат, розподіл «Лікарі vs Аптека», витрати по кожному члену сім'ї, рейтинг найдорожчих діагнозів та графік по місяцях.</li>
-                </ul>
-            </div>
-
-            <div class="help-section">
-                <h4>☁️ 7. Резервне копіювання та Переїзд на новий телефон</h4>
-                <ul>
-                    <li>У вкладці <b>«⚙️ Меню»</b> натисніть <b>«📱 У телефон (Download)»</b> — файл резервної копії миттєво збережеться в папку Завантаження вашого телефона.</li>
-                    <li>Натисніть <b>«☁️ На Google Диск»</b> — відкриється системне вікно відправки файлу: оберіть іконку <b>Google Диск</b> і збережіть файл у хмарі.</li>
-                    <li>Якщо ви встановили <b>Інтервал автоконтролю</b> (наприклад, раз на тиждень), програма сама автоматично зберігатиме свіжу резервну копію в папку <code>Download</code> і нагадуватиме оновити хмару.</li>
-                    <li>У <b>«📦 Центрі перенесення»</b> можна не лише замінити базу на новому телефоні, а й <b>об'єднати дві бази</b> (наприклад, додати записи з телефона дружини до вашого телефона без видалення існуючих даних!).</li>
+                    <li>Кнопка <b>«📱 У телефон (Download)»</b> миттєво зберігає файл резервної копії у папку Завантаження смартфона.</li>
+                    <li>Кнопка <b>«☁️ На Google Диск»</b> відкриває системне меню Android для збереження файлу у хмарі Google Диск.</li>
                 </ul>
             </div>
 
@@ -935,14 +958,14 @@
         </div>
     </div>
 
-    <div id="mediaViewerModal" class="modal" onclick="closeMediaViewer(event)" style="background: rgba(0,0,0,0.92); justify-content: center; align-items: center;">
-        <div style="position: relative; width: 96%; max-height: 92vh; text-align: center;" id="mediaViewerContainer"></div>
-    </div>
-
     <script>
         /* ==========================================
            1. STATE, CONSTANTS & INITIALIZATION
         ========================================== */
+        if (window.pdfjsLib) {
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
         const EMOJI_AVATARS = ['👨', '👩', '👦', '👧', '👴', '👵', '👶', '🧔', '👱‍♀️', '🦸‍♂️'];
         const MONTHS_UK = ['Січень', 'Лютий', 'Березень', 'Квітень', 'Травень', 'Червень', 'Липень', 'Серпень', 'Вересень', 'Жовтень', 'Листопад', 'Грудень'];
         const MONTHS_SEARCH_TOKENS = [
@@ -966,7 +989,7 @@
         let currentActiveTab = 'members';
         let currentMedSubTab = 'tracker';
         let ignoreNextPopState = false;
-        let currentImportMode = 'replace'; // 'replace' or 'merge'
+        let currentImportMode = 'replace';
 
         let selectedMemberAvatar = '👨';
         let currentVisitMedia = [];
@@ -974,6 +997,19 @@
         let mediaRecorder = null;
         let audioChunks = [];
         let alarmAudioInterval = null;
+
+        // Interactive Media Viewer State
+        let activeViewerMedia = null;
+        let currentBlobUrl = null;
+        let zoomScale = 1;
+        let panX = 0;
+        let panY = 0;
+        let startTouchDist = 0;
+        let startZoomScale = 1;
+        let isPanning = false;
+        let startPanX = 0;
+        let startPanY = 0;
+        let lastTapTime = 0;
 
         document.getElementById('medTrackerDate').value = new Date().toISOString().split('T')[0];
 
@@ -1017,7 +1053,6 @@
             }
         }
 
-        // Helper: Build rich date tokens so searching "2025", "2024.10", "15.10.2024", "10.2024", "жовтень" all match!
         function buildDateSearchTokens(isoDate) {
             if (!isoDate || !isoDate.includes('-')) return isoDate || '';
             let parts = isoDate.split('-');
@@ -1030,9 +1065,10 @@
         }
 
         /* ==========================================
-           2. ANDROID BACK GESTURE & MODAL HISTORY FIX
+           2. ANDROID BACK GESTURE & MODAL HISTORY
         ========================================== */
         function isAnyModalOpen() {
+            if (document.getElementById('mediaViewerModal').style.display === 'flex') return true;
             let modals = document.querySelectorAll('.modal');
             for (let m of modals) {
                 if (m.style.display === 'flex' || m.style.display === 'block') return true;
@@ -1149,7 +1185,7 @@
         }
 
         /* ==========================================
-           4. UI HELPERS: TOASTS, CONFIRM, THEME, AGE
+           4. UI HELPERS & HIGH-RES IMAGE COMPRESSION
         ========================================== */
         function showToast(message, type = 'success') {
             let container = document.getElementById('toast-container');
@@ -1219,7 +1255,8 @@
             return `${years} р.`;
         }
 
-        function compressImage(file, maxWidth = 1200, quality = 0.78) {
+        // High-res image preservation (2200px max, 0.88 quality) so small medical print is crystal clear when zoomed!
+        function compressImage(file, maxWidth = 2200, quality = 0.88) {
             return new Promise((resolve) => {
                 let reader = new FileReader();
                 reader.onload = function(event) {
@@ -1245,7 +1282,7 @@
         }
 
         /* ==========================================
-           5. NAVIGATION (STAYS ON CURRENT TAB!)
+           5. NAVIGATION & SEARCH
         ========================================== */
         function switchTab(tabName, fromBackGesture = false) {
             let previousTab = currentActiveTab;
@@ -1263,7 +1300,6 @@
             }
             document.getElementById('tab-' + tabName).style.display = 'block';
 
-            // Auto-clear search when entering Journal or Docs from another tab
             if (tabName === 'visits') {
                 if (previousTab !== 'visits') {
                     document.getElementById('searchQuery').value = '';
@@ -1357,9 +1393,6 @@
             ).join('');
         }
 
-        /* ==========================================
-           6. SEARCH HISTORY & CUSTOM TAGS
-        ========================================== */
         function saveSearchQuery(q) {
             q = q.trim();
             if (!q || q.length < 2) return;
@@ -1423,7 +1456,7 @@
         }
 
         /* ==========================================
-           7. MEMBERS MANAGEMENT & RELIABLE BIRTHDATE
+           6. MEMBERS MANAGEMENT
         ========================================== */
         function renderEmojiPicker() {
             let container = document.getElementById('emojiPicker');
@@ -1563,7 +1596,7 @@
         }
 
         /* ==========================================
-           8. MEDICATION TRACKER & NEXT DOSE REMINDERS
+           7. MEDICATION TRACKER & REMINDERS
         ========================================== */
         function playAlarmSound() {
             try {
@@ -1934,7 +1967,7 @@
             }).join('');
         }
 
-        /* --- HOME CABINET (ДОМАШНЯ АПТЕЧКА) --- */
+        /* --- HOME CABINET --- */
         function getCabinetItemExpiryStatus(expiryMonthStr) {
             if (!expiryMonthStr) return { status: 'ok', daysLeft: 999, label: 'Термін не вказано' };
             let parts = expiryMonthStr.split('-');
@@ -2082,7 +2115,7 @@
         }
 
         /* ==========================================
-           9. VISITS, HOME ILLNESSES, MEDIA & AUDIO
+           8. VISITS, HOME ILLNESSES, MEDIA & AUDIO
         ========================================== */
         function openVisitModal(id = null) {
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
@@ -2167,23 +2200,27 @@
         async function addNewMediaItem(input, containerId) {
             if (!input.files || input.files.length === 0) return;
             for (let file of Array.from(input.files)) {
-                if (file.type.startsWith('image/')) {
-                    let compressed = await compressImage(file, 1400, 0.8);
+                let fNameLower = (file.name || '').toLowerCase();
+                let isPdf = file.type === 'application/pdf' || fNameLower.endsWith('.pdf');
+                let isVideo = file.type.startsWith('video/') || fNameLower.endsWith('.mp4') || fNameLower.endsWith('.mov') || fNameLower.endsWith('.webm');
+
+                if (!isPdf && !isVideo && file.type.startsWith('image/')) {
+                    let compressed = await compressImage(file, 2200, 0.88);
                     currentVisitMedia.push({
                         type: 'image',
                         data: compressed,
-                        title: file.name.replace(/\.[^/.]+$/, "").substring(0, 28),
+                        title: file.name.replace(/\.[^/.]+$/, "").substring(0, 32),
                         tags: '#аналізи'
                     });
                 } else {
                     let reader = new FileReader();
                     await new Promise((res) => {
                         reader.onload = function(evt) {
-                            let fType = file.type.startsWith('video') ? 'video' : (file.type === 'application/pdf' ? 'pdf' : 'image');
+                            let fType = isPdf ? 'pdf' : (isVideo ? 'video' : 'image');
                             currentVisitMedia.push({
                                 type: fType,
                                 data: evt.target.result,
-                                title: file.name.substring(0, 28),
+                                title: file.name.substring(0, 32),
                                 tags: fType === 'pdf' ? '#аналізи #виписка' : '#відео'
                             });
                             res();
@@ -2203,7 +2240,7 @@
             container.innerHTML = currentVisitMedia.map((m, idx) => `
                 <div class="media-card">
                     <div class="thumb-box" onclick="openCurrentMediaPreview(${idx})">
-                        ${m.type === 'video' ? `<video class="thumb" src="${m.data}"></video><span style="position:absolute;">▶</span>` : 
+                        ${m.type === 'video' ? `<span style="font-size:1.3rem;">🎬</span>` : 
                           (m.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${m.data}" class="thumb">`)}
                     </div>
                     <div style="flex:1;">
@@ -2289,9 +2326,11 @@
         function renderVisitAudioPreview() {
             document.getElementById('vAudioPreview').innerHTML = currentVisitAudio.map((a, idx) => `
                 <div class="audio-item">
-                    <span style="font-size:0.8rem; font-weight:600;">🎙 ${a.name}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.8rem; font-weight:600;">🎙 ${a.name}</span>
+                        <button type="button" onclick="currentVisitAudio.splice(${idx},1); renderVisitAudioPreview();" style="background:var(--danger); color:white; border:none; border-radius:6px; padding:3px 8px; font-size:0.75rem; cursor:pointer;">×</button>
+                    </div>
                     <audio controls src="${a.data}"></audio>
-                    <button type="button" onclick="currentVisitAudio.splice(${idx},1); renderVisitAudioPreview();" style="background:var(--danger); color:white; border:none; border-radius:6px; padding:4px 8px; font-size:0.75rem; cursor:pointer;">×</button>
                 </div>
             `).join('');
         }
@@ -2374,7 +2413,7 @@
         }
 
         /* ==========================================
-           10. RENDERING ALL VIEWS & DATE SEARCH
+           9. RENDERING VIEWS WITH QUICK FILE ACTIONS
         ========================================== */
         function updateDropdowns() {
             let memberOptions = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
@@ -2387,7 +2426,6 @@
                 el.value = cur;
             });
 
-            // Populate Year filter dynamically from existing visits
             let yearEl = document.getElementById('filterYear');
             if (yearEl) {
                 let curY = yearEl.value;
@@ -2511,9 +2549,19 @@
                         ${mediaList.length > 0 ? `
                             <div style="margin-top:10px;">
                                 ${mediaList.map((m, mIdx) => `
-                                    <div style="font-size:0.82rem; background:var(--bg); padding:6px 10px; border-radius:8px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); cursor:pointer;" onclick="openVisitMediaById('${v.id}', ${mIdx})">
-                                        <span style="color:var(--primary); font-weight:600;">${m.type === 'pdf' ? '📄' : (m.type === 'video' ? '🎬' : '🖼️')} ${m.title || 'Документ'}</span>
-                                        <span style="font-size:0.72rem; color:var(--text-light);">${m.tags || ''} 🔍</span>
+                                    <div class="attachment-row">
+                                        <div class="attachment-top" onclick="openVisitMediaById('${v.id}', ${mIdx})" style="cursor:pointer;">
+                                            <span style="color:var(--primary); font-weight:700; font-size:0.86rem;">
+                                                ${m.type === 'pdf' ? '📄 PDF:' : (m.type === 'video' ? '🎬 Відео:' : '🖼️ Фото:')} ${m.title || 'Документ'}
+                                            </span>
+                                            <span style="font-size:0.72rem; color:var(--text-light);">${m.tags || ''}</span>
+                                        </div>
+                                        <div class="attachment-actions">
+                                            <button class="btn-xs" onclick="openVisitMediaById('${v.id}', ${mIdx})">🔍 Збільшити / Переглянути</button>
+                                            <button class="btn-xs" onclick="handleSingleMediaAction('${v.id}', ${mIdx}, 'open')">📱 Відкрити в додатку</button>
+                                            <button class="btn-xs" onclick="handleSingleMediaAction('${v.id}', ${mIdx}, 'share')">📤 Поділитися</button>
+                                            <button class="btn-xs" onclick="handleSingleMediaAction('${v.id}', ${mIdx}, 'download')">⬇️ Скачати</button>
+                                        </div>
                                     </div>
                                 `).join('')}
                             </div>
@@ -2521,7 +2569,18 @@
 
                         ${audioList.length > 0 ? `
                             <div style="margin-top: 8px;">
-                                ${audioList.map(a => `<div class="audio-item"><span style="font-size:0.78rem; font-weight:600;">🎙 ${a.name}</span><audio controls src="${a.data}"></audio></div>`).join('')}
+                                ${audioList.map((a, aIdx) => `
+                                    <div class="audio-item">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                                            <span style="font-size:0.8rem; font-weight:700;">🎙 ${a.name}</span>
+                                            <div style="display:flex; gap:4px;">
+                                                <button class="btn-xs" onclick="handleAudioAction('${v.id}', ${aIdx}, 'share')">📤 Поділитися</button>
+                                                <button class="btn-xs" onclick="handleAudioAction('${v.id}', ${aIdx}, 'download')">⬇️ Скачати</button>
+                                            </div>
+                                        </div>
+                                        <audio controls src="${a.data}"></audio>
+                                    </div>
+                                `).join('')}
                             </div>
                         ` : ''}
 
@@ -2574,17 +2633,25 @@
             }
 
             container.innerHTML = filtered.map(d => `
-                <div class="card" style="display:flex; gap:12px; align-items:center;">
-                    <div class="thumb-box" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">
-                        ${d.media.type === 'video' ? `<video class="thumb" src="${d.media.data}"></video>` : 
-                          (d.media.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${d.media.data}" class="thumb">`)}
+                <div class="card">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <div class="thumb-box" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">
+                            ${d.media.type === 'video' ? `<span style="font-size:1.5rem;">🎬</span>` : 
+                              (d.media.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${d.media.data}" class="thumb">`)}
+                        </div>
+                        <div style="flex:1;">
+                            <span class="badge">${d.date}</span>
+                            <span class="badge badge-purple">${d.memberName}</span>
+                            <h3 style="font-size:0.95rem; margin-top:4px; cursor:pointer; color:var(--primary);" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">${d.media.title || 'Документ'}</h3>
+                            <p style="font-size:0.8rem;">Подія: <b>${d.diagnosis}</b></p>
+                            <div>${(d.media.tags || '').split(' ').filter(Boolean).map(t => `<span class="badge" style="background:var(--bg); color:var(--text-light);">${t}</span>`).join('')}</div>
+                        </div>
                     </div>
-                    <div style="flex:1;">
-                        <span class="badge">${d.date}</span>
-                        <span class="badge badge-purple">${d.memberName}</span>
-                        <h3 style="font-size:0.95rem; margin-top:4px; cursor:pointer; color:var(--primary);" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">${d.media.title || 'Документ'}</h3>
-                        <p style="font-size:0.8rem;">Подія: <b>${d.diagnosis}</b></p>
-                        <div>${(d.media.tags || '').split(' ').filter(Boolean).map(t => `<span class="badge" style="background:var(--bg); color:var(--text-light);">${t}</span>`).join('')}</div>
+                    <div class="attachment-actions" style="margin-top:10px; border-top:1px solid var(--border); padding-top:8px;">
+                        <button class="btn-xs" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">🔍 Збільшити / Читати</button>
+                        <button class="btn-xs" onclick="handleSingleMediaAction('${d.visitId}', ${d.mediaIdx}, 'open')">📱 Відкрити в додатку</button>
+                        <button class="btn-xs" onclick="handleSingleMediaAction('${d.visitId}', ${d.mediaIdx}, 'share')">📤 Поділитися</button>
+                        <button class="btn-xs" onclick="handleSingleMediaAction('${d.visitId}', ${d.mediaIdx}, 'download')">⬇️ Скачати</button>
                     </div>
                 </div>
             `).join('');
@@ -2730,11 +2797,322 @@
         }
 
         /* ==========================================
-           11. NATIVE PHONE & GOOGLE DRIVE BACKUP + MIGRATION
+           10. FULL-SCREEN ZOOM VIEWER, PDF.JS, VIDEO & FILE SHARING
+        ========================================== */
+        function dataURIToUint8Array(dataURI) {
+            let split = dataURI.split(',');
+            let base64 = split.length > 1 ? split[1] : split[0];
+            let raw = window.atob(base64);
+            let uint8 = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) {
+                uint8[i] = raw.charCodeAt(i);
+            }
+            return uint8;
+        }
+
+        function getMediaMimeAndFileName(mediaObj) {
+            let dataURI = mediaObj.data || '';
+            let mime = 'image/jpeg';
+            if (dataURI.startsWith('data:')) {
+                mime = dataURI.substring(5, dataURI.indexOf(';'));
+            } else if (mediaObj.type === 'pdf') {
+                mime = 'application/pdf';
+            } else if (mediaObj.type === 'video') {
+                mime = 'video/mp4';
+            } else if (mediaObj.type === 'audio') {
+                mime = 'audio/mp4';
+            }
+
+            let ext = '.jpg';
+            if (mime.includes('pdf') || mediaObj.type === 'pdf') { mime = 'application/pdf'; ext = '.pdf'; }
+            else if (mime.includes('png')) ext = '.png';
+            else if (mime.includes('mp4')) ext = '.mp4';
+            else if (mime.includes('webm') && mediaObj.type === 'video') ext = '.webm';
+            else if (mediaObj.type === 'video') { mime = 'video/mp4'; ext = '.mp4'; }
+            else if (mime.includes('mpeg') || mime.includes('mp3')) ext = '.mp3';
+            else if (mime.includes('wav')) ext = '.wav';
+            else if (mediaObj.type === 'audio' || mime.includes('audio')) ext = '.m4a';
+
+            let cleanTitle = (mediaObj.title || mediaObj.name || 'MedFile').replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_\-]/g, '_');
+            if (!cleanTitle.toLowerCase().endsWith(ext)) {
+                cleanTitle += ext;
+            }
+            return { mime, fileName: cleanTitle };
+        }
+
+        function handleSingleMediaAction(visitId, mediaIdx, actionType) {
+            let v = dbData.visits.find(x => x.id === visitId);
+            if (!v || !v.media || !v.media[mediaIdx]) return;
+            executeMediaFileAction(v.media[mediaIdx], actionType);
+        }
+
+        function handleAudioAction(visitId, audioIdx, actionType) {
+            let v = dbData.visits.find(x => x.id === visitId);
+            if (!v || !v.audio || !v.audio[audioIdx]) return;
+            let a = v.audio[audioIdx];
+            executeMediaFileAction({ type: 'audio', title: a.name || 'Audio', data: a.data }, actionType);
+        }
+
+        async function executeMediaFileAction(mediaObj, actionType) {
+            let { mime, fileName } = getMediaMimeAndFileName(mediaObj);
+            let title = mediaObj.title || mediaObj.name || fileName;
+
+            // 1. Native Android Bridge (APK)
+            if (window.AndroidNative) {
+                if (actionType === 'open' && typeof window.AndroidNative.openBinaryFile === 'function') {
+                    let res = window.AndroidNative.openBinaryFile(fileName, mediaObj.data, mime);
+                    if (res === 'OK') return;
+                    showToast('Помилка відкриття: ' + res, 'warning');
+                }
+                if (actionType === 'share' && typeof window.AndroidNative.shareBinaryFile === 'function') {
+                    let res = window.AndroidNative.shareBinaryFile(fileName, mediaObj.data, mime, title);
+                    if (res === 'OK') return;
+                    showToast('Помилка відправки: ' + res, 'warning');
+                }
+                if (actionType === 'download' && typeof window.AndroidNative.saveBinaryFile === 'function') {
+                    let res = window.AndroidNative.saveBinaryFile(fileName, mediaObj.data, mime);
+                    if (res === 'OK') {
+                        showToast(`✅ Файл збережено в Завантаження (Download): ${fileName}`);
+                        return;
+                    }
+                    showToast('Помилка збереження: ' + res, 'danger');
+                }
+            }
+
+            // 2. Browser / Web Share Fallback
+            try {
+                let bytes = dataURIToUint8Array(mediaObj.data);
+                let blob = new Blob([bytes], { type: mime });
+                if (actionType === 'share' && navigator.canShare) {
+                    let file = new File([blob], fileName, { type: mime });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ title: title, files: [file] });
+                        return;
+                    }
+                }
+                let url = URL.createObjectURL(blob);
+                if (actionType === 'open') {
+                    window.open(url, '_blank');
+                } else {
+                    let a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    showToast(`✅ Файл ${fileName} завантажено!`);
+                }
+            } catch (e) {
+                showToast('Не вдалося виконати дію з файлом', 'danger');
+            }
+        }
+
+        function openCurrentMediaExternally() {
+            if (activeViewerMedia) executeMediaFileAction(activeViewerMedia, 'open');
+        }
+        function shareCurrentMedia() {
+            if (activeViewerMedia) executeMediaFileAction(activeViewerMedia, 'share');
+        }
+        function downloadCurrentMedia() {
+            if (activeViewerMedia) executeMediaFileAction(activeViewerMedia, 'download');
+        }
+
+        async function openMediaViewer(mediaObj) {
+            pushModalState();
+            activeViewerMedia = mediaObj;
+            zoomScale = 1;
+            panX = 0;
+            panY = 0;
+
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+
+            let stage = document.getElementById('viewerStage');
+            let zoomControls = document.getElementById('viewerZoomControls');
+            document.getElementById('viewerTitleText').innerText = `${mediaObj.title || 'Документ'} ${mediaObj.tags || ''}`;
+            document.getElementById('zoomLevelIndicator').innerText = '100%';
+            document.getElementById('mediaViewerModal').style.display = 'flex';
+
+            let { mime } = getMediaMimeAndFileName(mediaObj);
+
+            // CASE 1: VIDEO
+            if (mediaObj.type === 'video' || mime.startsWith('video/')) {
+                stage.className = 'viewer-stage';
+                zoomControls.style.display = 'none';
+                try {
+                    let bytes = dataURIToUint8Array(mediaObj.data);
+                    let blob = new Blob([bytes], { type: mime });
+                    currentBlobUrl = URL.createObjectURL(blob);
+                    stage.innerHTML = `
+                        <div style="width:96%; text-align:center;">
+                            <video controls autoplay playsinline style="width:100%; max-height:70vh; border-radius:12px; background:#000;" src="${currentBlobUrl}"></video>
+                            <p style="color:#94a3b8; font-size:0.8rem; margin-top:10px;">Якщо відео не відтворюється у вбудованому плеєрі, натисніть кнопку нижче:</p>
+                            <button class="btn" style="max-width:320px; margin:8px auto 0 auto;" onclick="openCurrentMediaExternally()">📱 Відкрити у відеоплеєрі телефона</button>
+                        </div>
+                    `;
+                } catch (e) {
+                    stage.innerHTML = `<div style="color:white; text-align:center; padding:20px;"><p>Формат відео потребує зовнішнього плеєра</p><button class="btn" onclick="openCurrentMediaExternally()">📱 Відкрити у відеоплеєрі телефона</button></div>`;
+                }
+                return;
+            }
+
+            // CASE 2: PDF DOCUMENT (In-app multi-page canvas rendering + zoom + native reader button)
+            if (mediaObj.type === 'pdf' || mime === 'application/pdf') {
+                stage.className = 'viewer-stage scrollable-pdf';
+                zoomControls.style.display = 'flex';
+                stage.innerHTML = `
+                    <div id="pdfPagesWrapper" style="width:100%; transform-origin: top left; transition: width 0.15s ease;">
+                        <div style="color:white; text-align:center; padding:30px;" id="pdfLoadingMsg">⏳ Завантаження сторінок PDF для читання...</div>
+                    </div>
+                `;
+                renderPdfInsideStage(mediaObj);
+                return;
+            }
+
+            // CASE 3: IMAGE (Interactive Pinch-to-Zoom + Pan + Double-Tap)
+            stage.className = 'viewer-stage';
+            zoomControls.style.display = 'flex';
+            stage.innerHTML = `<img id="zoomableImage" src="${mediaObj.data}" alt="Medical Document">`;
+            initImageTouchZoomAndPan();
+        }
+
+        async function renderPdfInsideStage(mediaObj) {
+            let wrapper = document.getElementById('pdfPagesWrapper');
+            if (!window.pdfjsLib) {
+                wrapper.innerHTML = `
+                    <div style="color:white; text-align:center; padding:30px;">
+                        <div style="font-size:3rem; margin-bottom:10px;">📄</div>
+                        <h3>${mediaObj.title || 'PDF-документ'}</h3>
+                        <p style="color:#94a3b8; margin:10px 0 18px 0;">Для перегляду PDF без інтернету відкрийте його у системній читалці телефона:</p>
+                        <button class="btn" style="max-width:300px;" onclick="openCurrentMediaExternally()">📱 Відкрити PDF на телефоні</button>
+                    </div>
+                `;
+                return;
+            }
+            try {
+                let bytes = dataURIToUint8Array(mediaObj.data);
+                let loadingTask = window.pdfjsLib.getDocument({ data: bytes });
+                let pdf = await loadingTask.promise;
+                wrapper.innerHTML = `<div style="color:#38bdf8; text-align:center; font-size:0.8rem; margin-bottom:8px;">📄 Сторінок у PDF: ${pdf.numPages}. Використовуйте кнопки ➕ / ➖ знизу для збільшення шрифту!</div>`;
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    let page = await pdf.getPage(pageNum);
+                    let viewport = page.getViewport({ scale: 2.0 }); // High-DPI rendering for crisp small print
+                    let canvas = document.createElement('canvas');
+                    canvas.style.width = '100%';
+                    canvas.style.height = 'auto';
+                    canvas.style.display = 'block';
+                    canvas.style.marginBottom = '12px';
+                    canvas.style.borderRadius = '8px';
+                    canvas.style.background = '#fff';
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    wrapper.appendChild(canvas);
+                    await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+                }
+            } catch (err) {
+                wrapper.innerHTML = `
+                    <div style="color:white; text-align:center; padding:30px;">
+                        <div style="font-size:3rem; margin-bottom:10px;">📄</div>
+                        <p style="margin-bottom:14px;">Відкрийте цей PDF у зручному переглядачі вашого телефона:</p>
+                        <button class="btn" style="max-width:300px;" onclick="openCurrentMediaExternally()">📱 Відкрити в PDF-читалці телефона</button>
+                    </div>
+                `;
+            }
+        }
+
+        function applyTransformToViewer() {
+            let img = document.getElementById('zoomableImage');
+            if (img) {
+                img.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
+            }
+            let pdfWrap = document.getElementById('pdfPagesWrapper');
+            if (pdfWrap) {
+                pdfWrap.style.width = `${Math.round(zoomScale * 100)}%`;
+            }
+            document.getElementById('zoomLevelIndicator').innerText = `${Math.round(zoomScale * 100)}%`;
+        }
+
+        function adjustViewerZoom(delta) {
+            zoomScale = Math.min(8, Math.max(1, +(zoomScale + delta).toFixed(2)));
+            if (zoomScale === 1) { panX = 0; panY = 0; }
+            applyTransformToViewer();
+        }
+
+        function resetViewerZoom() {
+            zoomScale = 1;
+            panX = 0;
+            panY = 0;
+            applyTransformToViewer();
+        }
+
+        function initImageTouchZoomAndPan() {
+            let stage = document.getElementById('viewerStage');
+            if (!stage) return;
+
+            stage.ontouchstart = function(e) {
+                if (e.touches.length === 2) {
+                    isPanning = false;
+                    let dx = e.touches[0].clientX - e.touches[1].clientX;
+                    let dy = e.touches[0].clientY - e.touches[1].clientY;
+                    startTouchDist = Math.hypot(dx, dy);
+                    startZoomScale = zoomScale;
+                } else if (e.touches.length === 1) {
+                    let now = Date.now();
+                    if (now - lastTapTime < 300) {
+                        // Double tap toggles 1x <-> 2.8x zoom
+                        if (zoomScale > 1.2) {
+                            resetViewerZoom();
+                        } else {
+                            zoomScale = 2.8;
+                            applyTransformToViewer();
+                        }
+                        lastTapTime = 0;
+                        return;
+                    }
+                    lastTapTime = now;
+
+                    if (zoomScale > 1) {
+                        isPanning = true;
+                        startPanX = e.touches[0].clientX - panX;
+                        startPanY = e.touches[0].clientY - panY;
+                    }
+                }
+            };
+
+            stage.ontouchmove = function(e) {
+                if (e.touches.length === 2 && startTouchDist > 0) {
+                    e.preventDefault();
+                    let dx = e.touches[0].clientX - e.touches[1].clientX;
+                    let dy = e.touches[0].clientY - e.touches[1].clientY;
+                    let dist = Math.hypot(dx, dy);
+                    let ratio = dist / startTouchDist;
+                    zoomScale = Math.min(8, Math.max(1, startZoomScale * ratio));
+                    applyTransformToViewer();
+                } else if (e.touches.length === 1 && isPanning && zoomScale > 1) {
+                    e.preventDefault();
+                    panX = e.touches[0].clientX - startPanX;
+                    panY = e.touches[0].clientY - startPanY;
+                    applyTransformToViewer();
+                }
+            };
+
+            stage.ontouchend = function(e) {
+                if (e.touches.length < 2) startTouchDist = 0;
+                if (e.touches.length === 0) isPanning = false;
+                if (zoomScale <= 1.02) {
+                    resetViewerZoom();
+                }
+            };
+        }
+
+        /* ==========================================
+           11. NATIVE PHONE & GOOGLE DRIVE BACKUP
         ========================================== */
         function buildBackupPayload() {
             return JSON.stringify({
-                version: 9,
+                version: 10,
                 exportedAt: new Date().toISOString(),
                 members: dbData.members,
                 visits: dbData.visits,
@@ -2798,7 +3176,6 @@
             let diffDays = (Date.now() - appSettings.lastBackupTimestamp) / (1000 * 60 * 60 * 24);
             if (diffDays >= intervalDays) {
                 banner.style.display = 'flex';
-                // Automatically save a silent local backup to phone Download folder when interval expires!
                 if (window.AndroidNative && typeof window.AndroidNative.saveBackupToPhone === 'function') {
                     let autoName = `FamilyMed_AutoBackup_${new Date().toISOString().split('T')[0]}.json`;
                     let res = window.AndroidNative.saveBackupToPhone(autoName, buildBackupPayload());
@@ -2812,7 +3189,6 @@
             }
         }
 
-        // 1. SAVE TO PHONE DOWNLOAD FOLDER
         function saveBackupToPhoneDownload() {
             let jsonStr = buildBackupPayload();
             let fileName = generateBackupFileName();
@@ -2828,7 +3204,6 @@
                 }
             }
 
-            // Browser fallback (on PC)
             let blob = new Blob([jsonStr], { type: 'application/json' });
             let url = URL.createObjectURL(blob);
             let a = document.createElement('a');
@@ -2842,12 +3217,10 @@
             showToast(`✅ Файл ${fileName} завантажено!`);
         }
 
-        // 2. SHARE TO GOOGLE DRIVE / CLOUD / MESSENGER
         async function shareBackupToCloud() {
             let jsonStr = buildBackupPayload();
             let fileName = generateBackupFileName();
 
-            // A) Native Android Bridge (100% reliable in APK!)
             if (window.AndroidNative && typeof window.AndroidNative.shareBackupFile === 'function') {
                 let res = window.AndroidNative.shareBackupFile(fileName, jsonStr);
                 if (res === 'OK') {
@@ -2857,7 +3230,6 @@
                 }
             }
 
-            // B) Web Share API fallback
             if (navigator.share) {
                 try {
                     let file = new File([jsonStr], fileName, { type: 'application/json' });
@@ -2870,18 +3242,16 @@
                 } catch (e) {}
             }
 
-            // C) Final fallback
             saveBackupToPhoneDownload();
         }
 
-        // 3. MIGRATION CENTER & MERGE / REPLACE IMPORT
         function openMigrationModal() {
             pushModalState();
             document.getElementById('migrationModal').style.display = 'flex';
         }
 
         function triggerImportMode(mode) {
-            currentImportMode = mode; // 'replace' or 'merge'
+            currentImportMode = mode;
             document.getElementById('importFile').click();
         }
 
@@ -2966,7 +3336,6 @@
             }
         }
 
-        // 4. READABLE REPORT EXPORT (TXT FOR DOCTOR / PRINTING)
         function exportReadableReport() {
             let lines = [];
             lines.push('=========================================');
@@ -3017,38 +3386,6 @@
             showToast('📄 Текстовий звіт завантажено!');
         }
 
-        /* ==========================================
-           12. MEDIA VIEWER & MODALS
-        ========================================== */
-        function openMediaViewer(mediaObj) {
-            pushModalState();
-            let container = document.getElementById('mediaViewerContainer');
-            if (mediaObj.type === 'video') {
-                container.innerHTML = `<video controls autoplay style="max-width:100%; max-height:82vh; border-radius:12px;" src="${mediaObj.data}"></video>`;
-            } else if (mediaObj.type === 'pdf') {
-                container.innerHTML = `
-                    <div class="card" style="max-width:360px; margin:0 auto; text-align:center;">
-                        <div style="font-size:3rem;">📄</div>
-                        <h3>${mediaObj.title || 'PDF-документ'}</h3>
-                        <p>${mediaObj.tags || ''}</p>
-                        <a href="${mediaObj.data}" download="${mediaObj.title || 'document'}.pdf" class="btn" style="text-decoration:none;">⬇️ Завантажити / Відкрити PDF</a>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <img style="max-width:100%; max-height:80vh; border-radius:12px; object-fit:contain;" src="${mediaObj.data}">
-                    <p style="color:white; margin-top:10px; font-weight:bold;">${mediaObj.title || ''} <span style="opacity:0.8; font-weight:normal;">${mediaObj.tags || ''}</span></p>
-                `;
-            }
-            document.getElementById('mediaViewerModal').style.display = 'flex';
-        }
-
-        function closeMediaViewer(e) {
-            if (e.target.id === 'mediaViewerModal') {
-                closeModals();
-            }
-        }
-
         function openHelpModal() {
             pushModalState();
             document.getElementById('helpModal').style.display = 'flex';
@@ -3057,14 +3394,18 @@
         function closeModals(fromPopState = false) {
             let wasOpen = isAnyModalOpen();
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            document.getElementById('mediaViewerContainer').innerHTML = '';
+            document.getElementById('mediaViewerModal').style.display = 'none';
+            document.getElementById('viewerStage').innerHTML = '';
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
             if (!fromPopState && wasOpen && window.history && window.history.state && window.history.state.modalOpen) {
                 ignoreNextPopState = true;
                 try { window.history.back(); } catch(e) { ignoreNextPopState = false; }
             }
         }
 
-        // Re-renders all data while keeping the user on their current active tab!
         function renderAll() {
             renderMembers();
             updateDropdowns();
