@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Сімейна Медкартка PRO</title>
     <script src="cordova.js"></script>
-    <!-- Локальне (офлайн) підключення PDF.js із автоматичним резервом через CDN для ПК -->
-    <script src="pdf.min.js" onerror="var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';document.head.appendChild(s);"></script>
+    <script src="pdf.min.js"></script>
     <style>
         :root {
             --primary: #0284c7;
@@ -159,7 +158,6 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Full-Screen Interactive Zoom & PDF/Video Viewer Modal */
         #mediaViewerModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #090d16; z-index: 2500; display: none; flex-direction: column; justify-content: space-between; overflow: hidden; }
         .viewer-topbar { background: rgba(15, 23, 42, 0.92); color: white; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; z-index: 20; border-bottom: 1px solid rgba(255,255,255,0.12); }
         .viewer-title-box { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 700; }
@@ -171,7 +169,6 @@
         .v-ctrl-btn { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.25); padding: 8px 12px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
         .v-ctrl-btn:active { background: var(--primary); }
 
-        /* PIN Lock Screen Overlay */
         #pinLockOverlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #0f172a, #0284c7); color: white; z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
         .pin-dots { display: flex; gap: 14px; margin: 20px 0 28px 0; }
         .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; transition: 0.15s; }
@@ -180,7 +177,6 @@
         .pin-key { width: 76px; height: 76px; border-radius: 50%; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); color: white; font-size: 1.6rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; user-select: none; }
         .pin-key:active { background: rgba(255,255,255,0.35); transform: scale(0.94); }
 
-        /* Printable Report Overlay */
         #printableReportModal .report-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.82rem; }
         #printableReportModal .report-table th, #printableReportModal .report-table td { border: 1px solid var(--border); padding: 7px 8px; text-align: left; vertical-align: top; }
         #printableReportModal .report-table th { background: var(--primary-light); color: var(--primary); font-weight: 700; }
@@ -208,12 +204,14 @@
         .help-section ul { padding-left: 18px; margin-top: 4px; }
         .help-icon { display: inline-block; background: var(--primary-light); border-radius: 6px; padding: 2px 6px; font-weight: bold; color: var(--primary); margin-right: 4px; }
 
+        .step-badge { display: inline-block; background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; text-align: center; line-height: 22px; font-size: 0.78rem; font-weight: bold; margin-right: 6px; }
+
         .empty-state { text-align: center; color: var(--text-light); padding: 36px 16px; font-size: 0.95rem; }
         .divider { height: 1px; background: var(--border); margin: 12px 0; }
     </style>
 </head>
 <body>
-    <div id="toast-container"></div>
+<div id="toast-container"></div>
 
     <!-- PIN LOCK SCREEN OVERLAY -->
     <div id="pinLockOverlay">
@@ -1061,67 +1059,69 @@
 
             <div class="help-section">
                 <h4><span class="help-icon">👨‍👩‍👧‍👦</span> 1. Вкладка «Сім'я»</h4>
-                <p>Тут створюються профілі. Головна фішка — кнопка <b>«🆘 Картка для лікаря»</b>. Вона миттєво відкриває коротку зводку: група крові, алергії, хронічні хвороби та останні діагнози. З неї також можна створити табличну PDF-виписку на друк.</p>
-            </div>
-
-            <div class="help-section">
-                <h4><span class="help-icon">📋</span> 2. Вкладка «Журнал»</h4>
-                <p>Всі ваші візити та домашні хвороби:
                 <ul>
-                    <li><b>Диктофон:</b> Ви можете записати рекомендації лікаря прямо під час прийому на вбудований диктофон.</li>
-                    <li><b>Хештеги:</b> Додавайте теги на кшталт <code>#зуби</code> чи <code>#аналізи</code>. Натиснувши на тег, ви одразу відфільтруєте історію.</li>
-                    <li><b>Пошук за датою:</b> Введіть <code>2025</code> або <code>10.2024</code> у пошуковий рядок, щоб знайти старі записи.</li>
-                    <li><b>Перенос:</b> Кнопка <b>«💊 В трекер»</b> під кожним записом дозволяє одним кліком перенести лікування, призначене лікарем, у розклад прийому.</li>
+                    <li>Створюйте профілі для кожного члена родини: обирайте емодзі або завантажуйте фото, вказуйте дату народження, групу крові, алергії на ліки та хронічні стани.</li>
+                    <li><b>🆘 Картка для лікаря:</b> відкриває на весь екран велику шпаргалку з групою крові, алергіями та останніми діагнозами для швидкого показу на прийомі.</li>
+                    <li><b>🖨️ Виписка PDF:</b> формує офіційну табличну виписку по конкретному члену сім'ї для друку або пересилання лікарю.</li>
                 </ul>
-                </p>
             </div>
 
             <div class="help-section">
-                <h4><span class="help-icon">💊</span> 3. Ліки й Аптечка</h4>
-                <p>Цей розділ має дві підвкладки:
+                <h4><span class="help-icon">📋</span> 2. Вкладка «Журнал» (Візити та Домашнє лікування)</h4>
                 <ul>
-                    <li><b>📅 Трекер прийому:</b> Контроль випитих таблеток. Ви можете встановити як <i>внутрішній таймер</i> програми (наприклад, кожні 8 годин), так і <b>«⏰ Системний будильник Android»</b>, який точно задзвонить навіть якщо вимкнений екран.</li>
-                    <li><b>🧰 Домашня аптечка:</b> Ревізія ваших медикаментів. Додаток автоматично підсвітить жовтим ліки, у яких скоро вийде термін придатності, та червоним — прострочені.</li>
+                    <li><b>Два типи записів:</b> фіксуйте як офіційні <code>🩺 Візити до лікаря</code>, так і <code>🏠 Домашні недуги</code> (застуда, температура тощо без візиту в клініку).</li>
+                    <li><b>🎙 Вбудований диктофон:</b> під час прийому натисніть <code>🔴 Записати на диктофон</code>, щоб не забути жодної поради лікаря.</li>
+                    <li><b>🔍 Розумний пошук за датами та тегами:</b> вводьте у пошук рік (напр. <code>2025</code>), рік і місяць (<code>2024.10</code> або <code>10.2024</code>), назву місяця (<code>жовтень</code>), прізвище лікаря чи натискайте на кольорові <code>#хештеги</code>.</li>
+                    <li><b>💊 В трекер в 1 клік:</b> кнопка <code>💊 В трекер</code> у картці візиту миттєво переносить призначені ліки у розклад прийому.</li>
                 </ul>
-                </p>
             </div>
 
             <div class="help-section">
-                <h4><span class="help-icon">📇</span> 4. Вкладка «Лікарі»</h4>
-                <p>Ваша приватна записна книжка хороших спеціалістів. Зберігайте графік роботи і кабінет. В один клік можна <b>Подзвонити</b>, написати у <b>Viber/Telegram</b>, або натиснути <b>«🩺 Створити візит»</b> — і ПІБ лікаря автоматично підставиться у новий запис журналу.</p>
-            </div>
-
-            <div class="help-section">
-                <h4><span class="help-icon">📁</span> 5. Вкладка «Файли»</h4>
-                <p>Усі додані до записів фото, виписки, PDF-аналізи та відео збираються тут. 
+                <h4><span class="help-icon">💊</span> 3. Вкладка «Ліки й Аптечка»</h4>
                 <ul>
-                    <li><b>Зум фото:</b> Натисніть на мініатюру і розводьте пальцями (Pinch-to-zoom) до 800% для читання дрібного тексту.</li>
-                    <li><b>Офлайн PDF:</b> Багатосторінкові аналізи з лабораторій відкриваються прямо всередині додатку, навіть якщо у вас немає інтернету.</li>
-                    <li><b>Share / Download:</b> Кнопка «📤 Поділитися» безпечно передає файли у месенджери, а «⬇️ Скачати» — зберігає в пам'ять телефона (папка Download). Великі файли передаються без обмежень.</li>
+                    <li><b>📅 Трекер прийому:</b> відмічайте випиті дози (Ранок, Обід, Вечір, Ніч). Встановлюйте швидкий таймер (<code>+4 год</code>, <code>+6 год</code>, <code>+8 год</code>) або натискайте <code>⏰ Будильник Android</code>, який виставить системний будильник телефона (спрацює навіть при вимкненому екрані).</li>
+                    <li><b>🧰 Домашня аптечка:</b> ведіть облік домашніх ліків, де вони лежать і скільки залишилося. Програма автоматично попередить про препарати, у яких скоро виходить термін (🟡) або які вже прострочені (🔴). З аптечки можна в 1 клік призначити препарат у трекер.</li>
                 </ul>
-                </p>
             </div>
 
             <div class="help-section">
-                <h4><span class="help-icon">📊</span> 6. Аналітика та Історія</h4>
-                <p>Дерево хронології дозволяє швидко згадати, як часто хворіє конкретний член родини. А розділ <b>Аналітика</b> будує графіки: скільки грошей пішло на лікарів, а скільки на аптеки, і який діагноз був найдорожчим за обраний рік.</p>
-            </div>
-
-            <div class="help-section">
-                <h4><span class="help-icon">⚙️</span> 7. Меню, PIN та Бекап</h4>
-                <p>Тут ви можете змінити тему, додати власні #хештеги та головне:
+                <h4><span class="help-icon">📇</span> 4. Вкладка «Лікарі» (Довідник контактів)</h4>
                 <ul>
-                    <li><b>🔐 Захист PIN-кодом:</b> Встановіть 4 цифри, щоб ніхто сторонній не зміг відкрити додаток.</li>
-                    <li><b>☁️ Резервне копіювання:</b> Налаштуйте автобекап раз на тиждень. Зберігайте файл <code>.json</code> на Google Диск.</li>
-                    <li><b>📦 Майстер перенесення:</b> Дозволяє об'єднати базу з телефоном дружини/чоловіка або переїхати на новий смартфон.</li>
+                    <li>Зберігайте контакти перевірених спеціалістів: ПІБ, спеціалізацію, клініку, телефон, графік та кабінет.</li>
+                    <li>Телефонуйте в 1 клік (<code>📞 Подзвонити</code>), пишіть у <code>💬 Viber</code> чи <code>✈️ Telegram</code>, або натискайте <code>🩺 Створити візит</code> — і дані лікаря автоматично підставляться у новий запис журналу.</li>
                 </ul>
-                </p>
+            </div>
+
+            <div class="help-section">
+                <h4><span class="help-icon">📁</span> 5. Вкладка «Файли» (Фото, Офлайн-PDF та Відео)</h4>
+                <ul>
+                    <li><b>🔍 Збільшення дрібного шрифту:</b> натисніть на фото виписки — розводьте двома пальцями (Pinch-to-Zoom), натискайте двічі по екрану або кнопками <code>➕</code> / <code>➖</code> (масштабування до 800%).</li>
+                    <li><b>📄 Читання PDF без інтернету:</b> усі сторінки PDF-аналізів розгортаються прямо всередині додатка офлайн.</li>
+                    <li><b>📤 Поділитися / 📱 Відкрити / ⬇️ Скачати:</b> працюють для фото, багатосторінкових PDF, відео та аудіозаписів будь-якого розміру завдяки потоковій передачі даних.</li>
+                </ul>
+            </div>
+
+            <div class="help-section">
+                <h4><span class="help-icon">📊</span> 6. Вкладки «Історія» та «Аналітика»</h4>
+                <ul>
+                    <li><b>🌳 Історія:</b> наочне хронологічне дерево всіх подій здоров'я обраного члена родини.</li>
+                    <li><b>📊 Аналітика:</b> підраховує витрати окремо на лікарів/аналізи та на аптеки, показує найдорожчі й найчастіші діагнози та статистику по місяцях.</li>
+                </ul>
+            </div>
+
+            <div class="help-section">
+                <h4><span class="help-icon">⚙️</span> 7. Вкладка «Меню» (Бекап, Переїзд на новий телефон, PIN)</h4>
+                <ul>
+                    <li><b>☁️ Резервне копіювання:</b> зберігайте базу у папку <code>Download</code> або на <code>Google Диск</code> та налаштуйте автоматичне нагадування (раз на тиждень/місяць).</li>
+                    <li><b>📦 Майстер перенесення:</b> дозволяє легко перенести всю базу на новий смартфон або <b>об'єднати дві бази</b> (наприклад, із телефоном дружини/чоловіка) без стирання записів.</li>
+                    <li><b>🔐 PIN-код:</b> захистіть вхід у програму 4-значним паролем.</li>
+                </ul>
             </div>
 
             <button class="btn" onclick="closeModals()">Зрозуміло, дякую!</button>
         </div>
     </div>
-    <script>
+<script>
         /* ==========================================
            1. STATE, CONSTANTS & OFFLINE PDF WORKER
         ========================================== */
@@ -1166,11 +1166,9 @@
         let audioChunks = [];
         let alarmAudioInterval = null;
 
-        // PIN Lock State
         let pinEntered = '';
         let pinMode = 'unlock';
 
-        // Interactive Media Viewer State
         let activeViewerMedia = null;
         let currentBlobUrl = null;
         let zoomScale = 1;
@@ -1386,15 +1384,62 @@
             });
         });
 
-     /* ==========================================
-           4. INDEXED-DB ENGINE (БЕЗВІДМОВНЕ ЗБЕРЕЖЕННЯ)
+        /* ==========================================
+           4. HYBRID STORAGE ENGINE (NATIVE + IDB + LOCALSTORAGE)
         ========================================== */
         const DB_NAME = 'FamilyMedProDB';
         const DB_VERSION = 1;
         let idb = null;
 
+        function ensureArraysExist() {
+            if (!dbData || typeof dbData !== 'object') dbData = {};
+            if (!Array.isArray(dbData.members)) dbData.members = [];
+            if (!Array.isArray(dbData.visits)) dbData.visits = [];
+            if (!Array.isArray(dbData.medications)) dbData.medications = [];
+            if (!Array.isArray(dbData.cabinet)) dbData.cabinet = [];
+            if (!Array.isArray(dbData.doctors)) dbData.doctors = [];
+            if (!Array.isArray(dbData.reminders)) dbData.reminders = [];
+        }
+
+        function loadFromLocalStorageFallback() {
+            try {
+                let fullRaw = localStorage.getItem('family_med_db');
+                if (fullRaw) {
+                    let parsed = JSON.parse(fullRaw);
+                    dbData = Object.assign(dbData, parsed);
+                } else {
+                    let m = localStorage.getItem('med_members'); if (m) dbData.members = JSON.parse(m);
+                    let v = localStorage.getItem('med_visits'); if (v) dbData.visits = JSON.parse(v);
+                    let meds = localStorage.getItem('med_medications'); if (meds) dbData.medications = JSON.parse(meds);
+                    let cab = localStorage.getItem('med_cabinet'); if (cab) dbData.cabinet = JSON.parse(cab);
+                    let docs = localStorage.getItem('med_doctors'); if (docs) dbData.doctors = JSON.parse(docs);
+                    let rem = localStorage.getItem('med_reminders'); if (rem) dbData.reminders = JSON.parse(rem);
+                }
+            } catch (e) { console.error('Fallback error:', e); }
+            ensureArraysExist();
+        }
+
         function initDB() {
             return new Promise((resolve) => {
+                ensureArraysExist();
+
+                // 1. Спроба завантажити з нативної пам'яті Android (найбільш надійно на смартфонах)
+                if (window.AndroidNative && typeof window.AndroidNative.loadAppData === 'function') {
+                    try {
+                        let nativeRaw = window.AndroidNative.loadAppData();
+                        if (nativeRaw && nativeRaw.length > 2) {
+                            let parsed = JSON.parse(nativeRaw);
+                            dbData = Object.assign(dbData, parsed);
+                            ensureArraysExist();
+                            resolve();
+                            return;
+                        }
+                    } catch (e) {
+                        console.error('Native load error:', e);
+                    }
+                }
+
+                // 2. Спроба завантажити з IndexedDB або LocalStorage
                 try {
                     let request = indexedDB.open(DB_NAME, DB_VERSION);
                     request.onupgradeneeded = function(e) {
@@ -1405,67 +1450,34 @@
                     };
                     request.onsuccess = function(e) {
                         idb = e.target.result;
-                        loadFromIDB().then(resolve);
-                    };
-                    request.onerror = function(e) {
-                        console.error('IDB Error', e);
-                        loadFromFallback();
-                        resolve();
-                    };
-                } catch(e) {
-                    loadFromFallback();
-                    resolve();
-                }
-            });
-        }
-
-        function loadFromFallback() {
-            try {
-                let m = localStorage.getItem('med_members'); if (m) dbData.members = JSON.parse(m);
-                let v = localStorage.getItem('med_visits'); if (v) dbData.visits = JSON.parse(v);
-                let meds = localStorage.getItem('med_medications'); if (meds) dbData.medications = JSON.parse(meds);
-                let cab = localStorage.getItem('med_cabinet'); if (cab) dbData.cabinet = JSON.parse(cab);
-                let docs = localStorage.getItem('med_doctors'); if (docs) dbData.doctors = JSON.parse(docs);
-                let rem = localStorage.getItem('med_reminders'); if (rem) dbData.reminders = JSON.parse(rem);
-            } catch(e) { console.error('Fallback load error'); }
-            ensureArraysExist();
-        }
-
-        function ensureArraysExist() {
-            if (!dbData.members) dbData.members = [];
-            if (!dbData.visits) dbData.visits = [];
-            if (!dbData.medications) dbData.medications = [];
-            if (!dbData.cabinet) dbData.cabinet = [];
-            if (!dbData.doctors) dbData.doctors = [];
-            if (!dbData.reminders) dbData.reminders = [];
-        }
-
-        function loadFromIDB() {
-            return new Promise((resolve) => {
-                if (!idb) {
-                    loadFromFallback();
-                    resolve();
-                    return;
-                }
-                try {
-                    let tx = idb.transaction(['app_store'], 'readonly');
-                    let store = tx.objectStore('app_store');
-                    let req = store.get('main_data');
-                    req.onsuccess = function() {
-                        if (req.result) {
-                            dbData = req.result;
-                        } else {
-                            loadFromFallback();
+                        try {
+                            let tx = idb.transaction(['app_store'], 'readonly');
+                            let store = tx.objectStore('app_store');
+                            let req = store.get('main_data');
+                            req.onsuccess = function() {
+                                if (req.result && typeof req.result === 'object') {
+                                    dbData = Object.assign(dbData, req.result);
+                                } else {
+                                    loadFromLocalStorageFallback();
+                                }
+                                ensureArraysExist();
+                                resolve();
+                            };
+                            req.onerror = function() {
+                                loadFromLocalStorageFallback();
+                                resolve();
+                            };
+                        } catch (txErr) {
+                            loadFromLocalStorageFallback();
+                            resolve();
                         }
-                        ensureArraysExist();
+                    };
+                    request.onerror = function() {
+                        loadFromLocalStorageFallback();
                         resolve();
                     };
-                    req.onerror = function() {
-                        loadFromFallback();
-                        resolve();
-                    };
-                } catch(e) {
-                    loadFromFallback();
+                } catch (err) {
+                    loadFromLocalStorageFallback();
                     resolve();
                 }
             });
@@ -1475,35 +1487,49 @@
             return new Promise((resolve) => {
                 ensureArraysExist();
 
-                // 1. Подвійне резервування у LocalStorage на випадок збою IndexedDB
+                // 1. МИТТЄВО оновлюємо весь інтерфейс на екрані
+                try { renderAll(); } catch (e) { console.error('Render error:', e); }
+
+                let jsonStr = '';
+                try { jsonStr = JSON.stringify(dbData); } catch (e) {}
+
+                // 2. Зберігаємо у нативну внутрішню пам'ять смартфона Android (чанками для великих баз)
+                if (window.AndroidNative && jsonStr) {
+                    try {
+                        if (typeof window.AndroidNative.startAppDataSave === 'function') {
+                            window.AndroidNative.startAppDataSave();
+                            const CHUNK = 250000;
+                            for (let i = 0; i < jsonStr.length; i += CHUNK) {
+                                window.AndroidNative.appendAppDataChunk(jsonStr.substring(i, i + CHUNK));
+                            }
+                            window.AndroidNative.finishAppDataSave();
+                        } else if (typeof window.AndroidNative.saveAppData === 'function') {
+                            window.AndroidNative.saveAppData(jsonStr);
+                        }
+                    } catch (e) { console.error('Native save error:', e); }
+                }
+
+                // 3. Зберігаємо у LocalStorage
                 try {
                     localStorage.setItem('med_members', JSON.stringify(dbData.members));
-                    localStorage.setItem('med_visits', JSON.stringify(dbData.visits));
-                    localStorage.setItem('med_medications', JSON.stringify(dbData.medications));
                     localStorage.setItem('med_cabinet', JSON.stringify(dbData.cabinet));
                     localStorage.setItem('med_doctors', JSON.stringify(dbData.doctors));
-                    localStorage.setItem('med_reminders', JSON.stringify(dbData.reminders));
-                } catch (e) { console.warn('LocalStorage error', e); }
+                    localStorage.setItem('med_medications', JSON.stringify(dbData.medications));
+                    if (jsonStr.length < 4500000) {
+                        localStorage.setItem('family_med_db', jsonStr);
+                    }
+                } catch (e) {}
 
-                // 2. Функція оновлення UI
-                let finalize = () => {
-                    try { renderAll(); } catch(err) { console.error('Render error:', err); }
-                    resolve();
-                };
-
-                // 3. Зберігаємо в основну базу IndexedDB
-                if (!idb) {
-                    finalize();
-                    return;
-                }
+                // 4. Зберігаємо в IndexedDB
+                if (!idb) { resolve(); return; }
                 try {
                     let tx = idb.transaction(['app_store'], 'readwrite');
                     let store = tx.objectStore('app_store');
                     store.put(dbData, 'main_data');
-                    tx.oncomplete = () => finalize();
-                    tx.onerror = () => finalize();
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = () => resolve();
                 } catch (e) {
-                    finalize();
+                    resolve();
                 }
             });
         }
@@ -1518,7 +1544,7 @@
         ========================================== */
         function showToast(message, type = 'success') {
             let container = document.getElementById('toast-container');
-            if(!container) return;
+            if (!container) return;
             let toast = document.createElement('div');
             toast.className = `toast ${type === 'warning' ? 'toast-warning' : ''} ${type === 'danger' ? 'toast-danger' : ''}`;
             let icon = type === 'success' ? '✅' : (type === 'warning' ? '✏️' : '🗑️');
@@ -1554,10 +1580,10 @@
         function applyTheme() {
             if (appSettings.theme === 'dark') {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                let tb = document.getElementById('themeBtn'); if(tb) tb.innerText = '☀️';
+                document.getElementById('themeBtn').innerText = '☀️';
             } else {
                 document.documentElement.removeAttribute('data-theme');
-                let tb = document.getElementById('themeBtn'); if(tb) tb.innerText = '🌙';
+                document.getElementById('themeBtn').innerText = '🌙';
             }
         }
 
@@ -1812,6 +1838,7 @@
 
         function openMemberModal(id = null) {
             pushModalState();
+            ensureArraysExist();
             document.getElementById('mEditId').value = id || '';
             document.getElementById('mPhotoInput').value = '';
             if (id) {
@@ -1849,43 +1876,121 @@
         }
 
         function saveMember() {
-            try {
-                let editId = document.getElementById('mEditId').value;
-                let name = document.getElementById('mName').value.trim();
-                if (!name) { showToast('Будь ласка, введіть ім\'я!', 'warning'); return; }
-                
-                let y = document.getElementById('mBirthYear').value;
-                let m = document.getElementById('mBirthMonth').value;
-                let d = document.getElementById('mBirthDay').value;
-                let birthDateStr = (y && m && d) ? `${y}-${m}-${d}` : (y ? `${y}-01-01` : '');
+            ensureArraysExist();
+            let editId = document.getElementById('mEditId').value;
+            let name = document.getElementById('mName').value.trim();
+            if (!name) { showToast('Будь ласка, введіть ім\'я!', 'warning'); return; }
+            
+            let y = document.getElementById('mBirthYear').value;
+            let m = document.getElementById('mBirthMonth').value;
+            let d = document.getElementById('mBirthDay').value;
+            let birthDateStr = (y && m && d) ? `${y}-${m}-${d}` : (y ? `${y}-01-01` : '');
 
-                let memberObj = {
-                    id: editId || Date.now().toString(),
-                    name: name,
-                    birthDate: birthDateStr,
-                    bloodGroup: document.getElementById('mBlood').value,
-                    allergies: document.getElementById('mAllergies').value,
-                    chronic: document.getElementById('mChronic').value,
-                    avatar: selectedMemberAvatar
-                };
+            let memberObj = {
+                id: editId || Date.now().toString(),
+                name: name,
+                birthDate: birthDateStr,
+                bloodGroup: document.getElementById('mBlood').value,
+                allergies: document.getElementById('mAllergies').value,
+                chronic: document.getElementById('mChronic').value,
+                avatar: selectedMemberAvatar
+            };
 
-                ensureArraysExist();
-
-                if (editId) {
-                    let idx = dbData.members.findIndex(x => x.id === editId);
-                    if (idx !== -1) dbData.members[idx] = memberObj;
-                    showToast(`Профіль «${name}» оновлено!`, 'warning');
-                } else {
-                    dbData.members.push(memberObj);
-                    showToast(`Додано члена родини: «${name}»!`);
-                }
-                
-                saveToIDB().then(() => {
-                    closeModals();
-                });
-            } catch (err) {
-                alert("Помилка збереження: " + err.message);
+            if (editId) {
+                let idx = dbData.members.findIndex(x => x.id === editId);
+                if (idx !== -1) dbData.members[idx] = memberObj;
+                showToast(`Профіль «${name}» оновлено!`, 'warning');
+            } else {
+                dbData.members.push(memberObj);
+                showToast(`Додано члена родини: «${name}»!`);
             }
+            closeModals();
+            saveToIDB();
+        }
+
+        function deleteMember(id) {
+            let m = dbData.members.find(x => x.id === id);
+            askConfirm('Видалити профіль?', `Ви впевнені, що хочете видалити профіль «${m ? m.name : ''}» та всі пов'язані медичні записи?`, () => {
+                dbData.members = dbData.members.filter(x => x.id !== id);
+                dbData.visits = dbData.visits.filter(v => v.memberId !== id);
+                dbData.medications = (dbData.medications || []).filter(med => med.memberId !== id);
+                saveToIDB();
+                showToast('Профіль та записи видалено', 'danger');
+            });
+        }
+
+        function openEmergencyCard(memberId) {
+            pushModalState();
+            let m = dbData.members.find(x => x.id === memberId);
+            if (!m) return;
+            let memberVisits = dbData.visits.filter(v => v.memberId === memberId).sort((a,b) => new Date(b.date) - new Date(a.date));
+            let recentDiagnoses = memberVisits.slice(0, 4).map(v => `<li><b>${v.date}:</b> ${v.diagnosis || v.doctor} ${v.treatment ? `<i>(${v.treatment})</i>` : ''}</li>`).join('');
+
+            let avatarHtml = (m.avatar && m.avatar.startsWith('data:image')) ? `<img src="${m.avatar}">` : (m.avatar || '👤');
+            let ageStr = calculateAge(m.birthDate);
+
+            document.getElementById('emergencyModalContent').innerHTML = `
+                <div style="text-align:center; margin-bottom:12px;">
+                    <div class="avatar-circle" style="margin:0 auto 8px auto; width:76px; height:76px; font-size:2.5rem;">${avatarHtml}</div>
+                    <h2 style="font-size:1.35rem; color:var(--primary);">${m.name}</h2>
+                    <p style="font-size:1rem; font-weight:bold;">${m.birthDate ? `Дата нар.: ${m.birthDate} (${ageStr})` : 'Вік не вказано'}</p>
+                </div>
+                <div class="card" style="background:var(--danger-light); border-color:var(--danger); margin-bottom:10px;">
+                    <p style="font-size:1rem; color:var(--danger);"><b>🩸 Група крові:</b> ${m.bloodGroup || 'Не вказано'}</p>
+                    <p style="font-size:1rem; color:var(--danger);"><b>⚠️ Алергії на ліки/продукти:</b> ${m.allergies || 'Немає даних'}</p>
+                </div>
+                <div class="card" style="background:var(--bg); margin-bottom:10px;">
+                    <p style="font-size:0.95rem;"><b>📌 Хронічні стани / Особливості:</b><br>${m.chronic || 'Немає записів'}</p>
+                </div>
+                <div class="card" style="background:var(--bg); margin-bottom:14px;">
+                    <p style="font-size:0.95rem;"><b>🕒 Останні звернення та призначення:</b></p>
+                    <ul style="padding-left:18px; font-size:0.88rem; margin-top:6px; line-height:1.5;">
+                        ${recentDiagnoses || '<li>Записів поки немає</li>'}
+                    </ul>
+                </div>
+                <button class="btn btn-teal" onclick="closeModals(); openPrintableReportModal('${m.id}');">🖨️ Повна виписка для лікаря (PDF / Друк)</button>
+                <button class="btn btn-secondary" onclick="closeModals()">Закрити картку (Назад)</button>
+            `;
+            document.getElementById('emergencyModal').style.display = 'flex';
+        }
+
+        function renderMembers() {
+            ensureArraysExist();
+            let mDiv = document.getElementById('members-list');
+            if (dbData.members.length === 0) {
+                mDiv.innerHTML = '<div class="empty-state">👨‍👩‍👧‍👦 Додайте першого члена родини, щоб почати вести медичну історію</div>';
+                return;
+            }
+            mDiv.innerHTML = dbData.members.map(m => {
+                let avatarHtml = (m.avatar && m.avatar.startsWith('data:image')) ? `<img src="${m.avatar}">` : (m.avatar || '👤');
+                let ageStr = calculateAge(m.birthDate);
+                let visitsCount = dbData.visits.filter(v => v.memberId === m.id).length;
+                let activeMedsCount = (dbData.medications || []).filter(med => med.memberId === m.id && (med.status || 'active') === 'active').length;
+                let totalSpent = dbData.visits.filter(v => v.memberId === m.id).reduce((sum, v) => sum + (Number(v.costDoctor)||0) + (Number(v.costMeds)||0), 0);
+
+                return `
+                    <div class="card">
+                        <div class="member-header">
+                            <div class="avatar-circle">${avatarHtml}</div>
+                            <div style="flex:1;">
+                                <h3>${m.name} ${ageStr ? `<span class="badge">${ageStr}</span>` : ''}</h3>
+                                <p><b>Дата народження:</b> ${m.birthDate || 'не вказано'} | <b>Група крові:</b> <span style="color:var(--primary); font-weight:bold;">${m.bloodGroup || '—'}</span></p>
+                                <span class="badge badge-purple">Записів: ${visitsCount}</span>
+                                ${activeMedsCount > 0 ? `<span class="badge badge-success" onclick="switchTab('meds')" style="cursor:pointer;">💊 П'є ліків: ${activeMedsCount}</span>` : ''}
+                                ${totalSpent > 0 ? `<span class="badge badge-money">Витрачено: ${totalSpent.toLocaleString()} ₴</span>` : ''}
+                            </div>
+                        </div>
+                        <p><b>⚠️ Алергії:</b> <span style="color:var(--danger); font-weight:600;">${m.allergies || 'немає'}</span></p>
+                        ${m.chronic ? `<p><b>📌 Хронічні / Примітки:</b> ${m.chronic}</p>` : ''}
+                        <div style="margin-top: 12px; display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:10px;">
+                            <button class="btn btn-sm" style="background:var(--primary);" onclick="openEmergencyCard('${m.id}')">🆘 Картка для лікаря</button>
+                            <button class="btn btn-teal btn-sm" onclick="openPrintableReportModal('${m.id}')">🖨️ Виписка PDF</button>
+                            <button class="btn btn-warning btn-sm" onclick="openMemberModal('${m.id}')">✏️ Редагувати</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         /* ==========================================
@@ -1893,6 +1998,7 @@
         ========================================== */
         function openDoctorModal(id = null) {
             pushModalState();
+            ensureArraysExist();
             document.getElementById('docEditId').value = id || '';
             if (id) {
                 let d = (dbData.doctors || []).find(x => x.id === id);
@@ -1916,12 +2022,12 @@
         }
 
         function saveDoctorToDirectory() {
+            ensureArraysExist();
             let name = document.getElementById('docName').value.trim();
             let spec = document.getElementById('docSpec').value.trim();
             if (!name && !spec) { showToast('Вкажіть ПІБ або спеціалізацію лікаря!', 'warning'); return; }
 
             let editId = document.getElementById('docEditId').value;
-            if (!dbData.doctors) dbData.doctors = [];
 
             let docObj = {
                 id: editId || Date.now().toString(),
@@ -1964,6 +2070,7 @@
         }
 
         function renderDoctorsDirectory() {
+            ensureArraysExist();
             let list = dbData.doctors || [];
             let query = (document.getElementById('docDirSearchQuery').value || '').toLowerCase().trim();
 
@@ -2015,7 +2122,7 @@
         }
 
         /* ==========================================
-           9. MEDICATION TRACKER & ALARMS
+           9. MEDICATION TRACKER, CABINET & ALARMS
         ========================================== */
         function playAlarmSound() {
             try {
@@ -2049,7 +2156,7 @@
             let targetDate = new Date(targetTime);
             let timeStr = targetDate.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
-            if (!dbData.reminders) dbData.reminders = [];
+            ensureArraysExist();
             dbData.reminders = dbData.reminders.filter(r => r.medId !== medId);
             dbData.reminders.push({
                 id: Date.now().toString(),
@@ -2079,7 +2186,7 @@
                 target.setDate(target.getDate() + 1);
             }
 
-            if (!dbData.reminders) dbData.reminders = [];
+            ensureArraysExist();
             dbData.reminders = dbData.reminders.filter(r => r.medId !== medId);
             dbData.reminders.push({
                 id: Date.now().toString(),
@@ -2204,6 +2311,7 @@
         }
 
         function openMedModal(id = null, prefillObj = null) {
+            ensureArraysExist();
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
             pushModalState();
             let select = document.getElementById('medMemberId');
@@ -2279,6 +2387,7 @@
         }
 
         function saveMedCourse() {
+            ensureArraysExist();
             let name = document.getElementById('medName').value.trim();
             if (!name) { showToast('Введіть назву препарату!', 'warning'); return; }
 
@@ -2286,7 +2395,6 @@
             if (slots.length === 0) { showToast('Оберіть хоча б один час прийому!', 'warning'); return; }
 
             let editId = document.getElementById('medEditId').value;
-            if (!dbData.medications) dbData.medications = [];
 
             let existingLogs = {};
             let existingStatus = 'active';
@@ -2354,6 +2462,7 @@
         }
 
         function renderMeds() {
+            ensureArraysExist();
             let selectedDate = document.getElementById('medTrackerDate').value || new Date().toISOString().split('T')[0];
             let memberFilter = document.getElementById('medFilterMember').value;
             let statusFilter = document.getElementById('medFilterStatus').value;
@@ -2470,6 +2579,7 @@
 
         function openCabinetModal(id = null) {
             pushModalState();
+            ensureArraysExist();
             document.getElementById('cabEditId').value = id || '';
             let nextYear = new Date().getFullYear() + 1;
             if (id) {
@@ -2499,12 +2609,11 @@
         }
 
         function saveCabinetItem() {
+            ensureArraysExist();
             let name = document.getElementById('cabName').value.trim();
             if (!name) { showToast('Введіть назву препарату!', 'warning'); return; }
 
             let editId = document.getElementById('cabEditId').value;
-            if (!dbData.cabinet) dbData.cabinet = [];
-
             let expStr = `${document.getElementById('cabExpYear').value}-${document.getElementById('cabExpMonth').value}`;
 
             let itemObj = {
@@ -2538,6 +2647,7 @@
         }
 
         function renderCabinet() {
+            ensureArraysExist();
             let items = dbData.cabinet || [];
             let total = items.length;
             let expiringCount = 0;
@@ -2597,10 +2707,11 @@
                 `;
             }).join('');
         }
-        /* ==========================================
+/* ==========================================
            10. VISITS, HOME ILLNESSES, MEDIA & AUDIO
         ========================================== */
         function openVisitModal(id = null) {
+            ensureArraysExist();
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
             pushModalState();
             let select = document.getElementById('vMemberId');
@@ -2650,6 +2761,7 @@
         }
 
         function openHomeIllnessModal(id = null) {
+            ensureArraysExist();
             if (dbData.members.length === 0) { showToast('Спочатку додайте члена родини!', 'warning'); return; }
             pushModalState();
             let select = document.getElementById('hMemberId');
@@ -2826,6 +2938,7 @@
         }
 
         function saveVisit() {
+            ensureArraysExist();
             let doctor = document.getElementById('vDoctor').value.trim();
             let diagnosis = document.getElementById('vDiagnosis').value.trim();
             if (!doctor && !diagnosis) { showToast('Вкажіть лікаря або діагноз!', 'warning'); return; }
@@ -2861,6 +2974,7 @@
         }
 
         function saveHomeIllness() {
+            ensureArraysExist();
             let diagnosis = document.getElementById('hDiagnosis').value.trim();
             if (!diagnosis) { showToast('Вкажіть, що сталося (стан або симптоми)!', 'warning'); return; }
 
@@ -2900,6 +3014,470 @@
                 saveToIDB();
                 showToast('Запис видалено з бази', 'danger');
             });
+        }
+
+        /* ==========================================
+           11. RENDERING VIEWS
+        ========================================== */
+        function updateDropdowns() {
+            ensureArraysExist();
+            let memberOptions = dbData.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            
+            ['filterMember', 'medFilterMember', 'docFilterMember', 'analyticsMember', 'reportMemberSelect'].forEach(selId => {
+                let el = document.getElementById(selId);
+                if (!el) return;
+                let cur = el.value;
+                el.innerHTML = `<option value="">Усі члени родини</option>` + memberOptions;
+                el.value = cur;
+            });
+
+            let yearEl = document.getElementById('filterYear');
+            if (yearEl) {
+                let curY = yearEl.value;
+                let yearsSet = new Set();
+                dbData.visits.forEach(v => {
+                    if (v.date && v.date.length >= 4) yearsSet.add(v.date.substring(0, 4));
+                });
+                let sortedYears = Array.from(yearsSet).sort((a,b) => b.localeCompare(a));
+                yearEl.innerHTML = `<option value="">Усі роки</option>` + sortedYears.map(y => `<option value="${y}">${y} рік</option>`).join('');
+                yearEl.value = curY;
+            }
+
+            let tlEl = document.getElementById('timelineMemberSelect');
+            if (tlEl) {
+                let curTl = tlEl.value;
+                tlEl.innerHTML = memberOptions;
+                if (curTl && dbData.members.some(m => m.id === curTl)) tlEl.value = curTl;
+            }
+        }
+
+        function renderVisits() {
+            ensureArraysExist();
+            let query = document.getElementById('searchQuery').value.toLowerCase().trim();
+            let memberFilter = document.getElementById('filterMember').value;
+            let yearFilter = document.getElementById('filterYear') ? document.getElementById('filterYear').value : '';
+            let typeFilter = document.getElementById('filterType').value;
+            let sortOrder = document.getElementById('sortOrder').value;
+
+            let filtered = dbData.visits.filter(v => {
+                let member = dbData.members.find(m => m.id === v.memberId);
+                let memberName = member ? member.name.toLowerCase() : '';
+                let mediaText = (v.media || []).map(m => (m.title + ' ' + m.tags)).join(' ').toLowerCase();
+                let dateTokens = buildDateSearchTokens(v.date).toLowerCase();
+                let fullText = `${dateTokens} ${v.doctor} ${v.clinic} ${v.diagnosis} ${v.reason} ${v.treatment} ${v.tags || ''} ${mediaText} ${memberName}`.toLowerCase();
+                
+                let matchQuery = !query || fullText.includes(query);
+                let matchMember = !memberFilter || v.memberId === memberFilter;
+                let matchYear = !yearFilter || (v.date && v.date.startsWith(yearFilter));
+                let matchType = !typeFilter || (typeFilter === 'home' ? v.type === 'home' : v.type !== 'home');
+                return matchQuery && matchMember && matchYear && matchType;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortOrder === 'cost_desc') {
+                    let costA = (Number(a.costDoctor)||0) + (Number(a.costMeds)||0);
+                    let costB = (Number(b.costDoctor)||0) + (Number(b.costMeds)||0);
+                    return costB - costA;
+                }
+                let dateA = new Date(a.date), dateB = new Date(b.date);
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+            });
+
+            let vDiv = document.getElementById('visits-list');
+            if (filtered.length === 0) {
+                vDiv.innerHTML = `<div class="empty-state">🔍 Записів не знайдено ${query ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="clearSearchInput()">Показати всі записи</button>` : ''}</div>`;
+                return;
+            }
+
+            vDiv.innerHTML = filtered.map(v => {
+                let member = dbData.members.find(m => m.id === v.memberId);
+                let memberName = member ? member.name : 'Видалений';
+                let isHome = v.type === 'home';
+                let mediaList = v.media || [];
+                let audioList = v.audio || [];
+                let costDoc = Number(v.costDoctor) || 0;
+                let costMeds = Number(v.costMeds) || 0;
+                let totalCost = costDoc + costMeds;
+
+                return `
+                    <div class="card" style="border-left: 5px solid ${isHome ? 'var(--teal)' : 'var(--primary)'};">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; margin-bottom:6px;">
+                            <div>
+                                <span class="badge" onclick="setSearchQuery('${v.date ? v.date.substring(0,7).replace('-','.') : ''}')" style="cursor:pointer;">📅 ${v.date}</span>
+                                <span class="badge badge-purple">👤 ${memberName}</span>
+                                <span class="badge ${isHome ? 'badge-home' : ''}">${isHome ? '🏠 Вдома' : '🩺 Лікар'}</span>
+                            </div>
+                            ${totalCost > 0 ? `<span class="badge badge-money">💰 ${totalCost} ₴</span>` : ''}
+                        </div>
+
+                        <h3>${isHome ? '🏠 ' : '🩺 '}${v.diagnosis || v.doctor}</h3>
+                        ${!isHome ? `<p><b>Спеціаліст та клініка:</b> ${v.doctor}${v.clinic ? `(${v.clinic})` : ''}</p>` : ''}
+                        ${v.reason ? `<p><b>Симптоми / Причина:</b> ${v.reason}</p>` : ''}
+                        ${v.treatment ? `<p><b>💊 Лікування:</b> ${v.treatment}</p>` : ''}
+                        
+                        ${v.tags ? `<div style="margin-top:6px;">${v.tags.split(' ').filter(Boolean).map(t => `<span class="chip" style="padding:2px 8px; font-size:0.72rem;" onclick="setSearchQuery('${t}')">${t}</span>`).join(' ')}</div>` : ''}
+
+                        ${mediaList.length > 0 ? `
+                            <div style="margin-top:10px;">
+                                ${mediaList.map((m, mIdx) => `
+                                    <div class="attachment-row">
+                                        <div class="attachment-top" onclick="openVisitMediaById('${v.id}', ${mIdx})" style="cursor:pointer;">
+                                            <span style="color:var(--primary); font-weight:700; font-size:0.86rem;">
+                                                ${m.type === 'pdf' ? '📄 PDF:' : (m.type === 'video' ? '🎬 Відео:' : '🖼️ Фото:')} ${m.title || 'Документ'}
+                                            </span>
+                                            <span style="font-size:0.72rem; color:var(--text-light);">${m.tags || ''}</span>
+                                        </div>
+                                        <div class="attachment-actions">
+                                            <button class="btn-xs" onclick="openVisitMediaById('${v.id}', ${mIdx})">🔍 Переглянути</button>
+                                            <button class="btn-xs" onclick="handleSingleMediaAction('${v.id}', ${mIdx}, 'open')">📱 Відкрити</button>
+                                            <button class="btn-xs" onclick="handleSingleMediaAction('${v.id}', ${mIdx}, 'share')">📤 Поділитися</button>
+                                            <button class="btn-xs" onclick="handleSingleMediaAction('${v.id}', ${mIdx}, 'download')">⬇️ Скачати</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${audioList.length > 0 ? `
+                            <div style="margin-top: 8px;">
+                                ${audioList.map((a, aIdx) => `
+                                    <div class="audio-item">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                                            <span style="font-size:0.8rem; font-weight:700;">🎙 ${a.name}</span>
+                                            <div style="display:flex; gap:4px;">
+                                                <button class="btn-xs" onclick="handleAudioAction('${v.id}', ${aIdx}, 'share')">📤 Поділитися</button>
+                                                <button class="btn-xs" onclick="handleAudioAction('${v.id}', ${aIdx}, 'download')">⬇️ Скачати</button>
+                                            </div>
+                                        </div>
+                                        <audio controls src="${a.data}"></audio>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div style="margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="btn btn-purple btn-sm" onclick="sendVisitTreatmentToTracker('${v.id}')">💊 В трекер</button>
+                            <button class="btn btn-warning btn-sm" onclick="${isHome ? `openHomeIllnessModal('${v.id}')` : `openVisitModal('${v.id}')`}">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteRecord('${v.id}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderDocumentsArchive() {
+            ensureArraysExist();
+            let query = document.getElementById('docSearchQuery').value.toLowerCase().trim();
+            let memberFilter = document.getElementById('docFilterMember').value;
+
+            let allDocs = [];
+            dbData.visits.forEach(v => {
+                let member = dbData.members.find(m => m.id === v.memberId);
+                let memberName = member ? member.name : 'Видалений';
+                if (v.media && Array.isArray(v.media)) {
+                    v.media.forEach((m, mIdx) => {
+                        allDocs.push({
+                            visitId: v.id,
+                            mediaIdx: mIdx,
+                            date: v.date,
+                            memberId: v.memberId,
+                            memberName: memberName,
+                            diagnosis: v.diagnosis || v.doctor,
+                            visitTags: v.tags || '',
+                            media: m
+                        });
+                    });
+                }
+            });
+
+            let filtered = allDocs.filter(d => {
+                let matchMember = !memberFilter || d.memberId === memberFilter;
+                let dateTokens = buildDateSearchTokens(d.date).toLowerCase();
+                let text = `${dateTokens} ${d.media.title} ${d.media.tags} ${d.visitTags} ${d.diagnosis} ${d.memberName}`.toLowerCase();
+                return matchMember && (!query || text.includes(query));
+            });
+
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let container = document.getElementById('documents-archive-list');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="empty-state">📁 Прикріплених документів чи фото за цим запитом немає</div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(d => `
+                <div class="card">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <div class="thumb-box" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">
+                            ${d.media.type === 'video' ? `<span style="font-size:1.5rem;">🎬</span>` : 
+                              (d.media.type === 'pdf' ? `<span>📄 PDF</span>` : `<img src="${d.media.data}" class="thumb">`)}
+                        </div>
+                        <div style="flex:1;">
+                            <span class="badge">${d.date}</span>
+                            <span class="badge badge-purple">${d.memberName}</span>
+                            <h3 style="font-size:0.95rem; margin-top:4px; cursor:pointer; color:var(--primary);" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">${d.media.title || 'Документ'}</h3>
+                            <p style="font-size:0.8rem;">Подія: <b>${d.diagnosis}</b></p>
+                            <div>${(d.media.tags || '').split(' ').filter(Boolean).map(t => `<span class="badge" style="background:var(--bg); color:var(--text-light);">${t}</span>`).join('')}</div>
+                        </div>
+                    </div>
+                    <div class="attachment-actions" style="margin-top:10px; border-top:1px solid var(--border); padding-top:8px;">
+                        <button class="btn-xs" onclick="openVisitMediaById('${d.visitId}', ${d.mediaIdx})">🔍 Читати</button>
+                        <button class="btn-xs" onclick="handleSingleMediaAction('${d.visitId}', ${d.mediaIdx}, 'open')">📱 Відкрити</button>
+                        <button class="btn-xs" onclick="handleSingleMediaAction('${d.visitId}', ${d.mediaIdx}, 'share')">📤 Поділитися</button>
+                        <button class="btn-xs" onclick="handleSingleMediaAction('${d.visitId}', ${d.mediaIdx}, 'download')">⬇️ Скачати</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTimeline() {
+            ensureArraysExist();
+            let memberId = document.getElementById('timelineMemberSelect').value;
+            let container = document.getElementById('timeline-content');
+            if (!memberId) { container.innerHTML = '<div class="empty-state">Оберіть члена родини</div>'; return; }
+
+            let records = dbData.visits.filter(v => v.memberId === memberId).sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (records.length === 0) { container.innerHTML = '<div class="empty-state">Записів для цього члена родини поки немає</div>'; return; }
+
+            container.innerHTML = `<div class="timeline-container">` + records.map(v => {
+                let isHome = v.type === 'home';
+                let totalCost = (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                return `
+                    <div class="timeline-item ${isHome ? 'home-event' : ''}">
+                        <div class="card" style="margin-bottom:0;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span class="badge">${v.date}</span>
+                                ${totalCost > 0 ? `<span class="badge badge-money">${totalCost} ₴</span>` : ''}
+                            </div>
+                            <h3 style="margin-top:6px;">${isHome ? '🏠 ' : '🩺 '}${v.diagnosis || v.doctor}</h3>
+                            ${!isHome ? `<p><b>Лікар:</b> ${v.doctor}</p>` : ''}
+                            ${v.treatment ? `<p><b>Лікування:</b> ${v.treatment}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('') + `</div>`;
+        }
+
+        function renderAnalytics() {
+            ensureArraysExist();
+            let memberFilter = document.getElementById('analyticsMember').value;
+            let periodFilter = document.getElementById('analyticsPeriod').value;
+            let queryFilter = document.getElementById('analyticsQuery').value.toLowerCase().trim();
+            let now = new Date();
+
+            let filtered = dbData.visits.filter(v => {
+                if (memberFilter && v.memberId !== memberFilter) return false;
+                if (periodFilter === 'year_current') {
+                    if (new Date(v.date).getFullYear() !== now.getFullYear()) return false;
+                } else if (periodFilter !== 'all') {
+                    let days = parseInt(periodFilter);
+                    if ((now - new Date(v.date)) / (1000 * 60 * 60 * 24) > days) return false;
+                }
+                if (queryFilter) {
+                    let dateTokens = buildDateSearchTokens(v.date).toLowerCase();
+                    let text = `${dateTokens} ${v.doctor} ${v.diagnosis} ${v.reason} ${v.treatment} ${v.tags || ''}`.toLowerCase();
+                    if (!text.includes(queryFilter)) return false;
+                }
+                return true;
+            });
+
+            let totalDocSpent = filtered.reduce((s, v) => s + (Number(v.costDoctor)||0), 0);
+            let totalMedsSpent = filtered.reduce((s, v) => s + (Number(v.costMeds)||0), 0);
+            let totalSpent = totalDocSpent + totalMedsSpent;
+            let docCount = filtered.filter(v => v.type !== 'home').length;
+            let homeCount = filtered.filter(v => v.type === 'home').length;
+
+            document.getElementById('anTotalSpent').innerText = totalSpent.toLocaleString() + ' ₴';
+            document.getElementById('anDoctorSpent').innerText = totalDocSpent.toLocaleString() + ' ₴';
+            document.getElementById('anMedsSpent').innerText = totalMedsSpent.toLocaleString() + ' ₴';
+            document.getElementById('anTotalEvents').innerText = `${filtered.length} (${docCount} / ${homeCount})`;
+
+            let memberStats = {};
+            dbData.members.forEach(m => { memberStats[m.id] = { name: m.name, spent: 0, count: 0 }; });
+            filtered.forEach(v => {
+                if (memberStats[v.memberId]) {
+                    memberStats[v.memberId].spent += (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                    memberStats[v.memberId].count += 1;
+                }
+            });
+            let sortedMembers = Object.values(memberStats).filter(x => x.count > 0 || x.spent > 0).sort((a,b) => b.spent - a.spent);
+            let maxMemSpent = sortedMembers.length > 0 ? Math.max(...sortedMembers.map(x => x.spent), 1) : 1;
+            document.getElementById('analyticsMembersBars').innerHTML = sortedMembers.length === 0 ? '<p>Немає даних</p>' :
+                sortedMembers.map(m => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span><b>👤 ${m.name}</b> (${m.count} зап.)</span>
+                            <span><b>${m.spent.toLocaleString()} ₴</b></span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((m.spent/maxMemSpent)*100)}%; background:var(--purple);"></div></div>
+                    </div>
+                `).join('');
+
+            let diagCosts = {};
+            let diagFreq = {};
+            filtered.forEach(v => {
+                let d = (v.diagnosis || v.doctor || 'Інше').trim();
+                let c = (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                diagCosts[d] = (diagCosts[d] || 0) + c;
+                diagFreq[d] = (diagFreq[d] || 0) + 1;
+            });
+
+            let sortedCostDiags = Object.entries(diagCosts).filter(x => x[1] > 0).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let maxDiagCost = sortedCostDiags.length > 0 ? sortedCostDiags[0][1] : 1;
+            document.getElementById('analyticsCostDiagnosesBars').innerHTML = sortedCostDiags.length === 0 ? '<p>Немає даних про витрати</p>' :
+                sortedCostDiags.map(([d, cost]) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span><b>${d}</b></span>
+                            <span style="color:#d97706; font-weight:bold;">${cost.toLocaleString()} ₴</span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((cost/maxDiagCost)*100)}%; background:var(--warning);"></div></div>
+                    </div>
+                `).join('');
+
+            let sortedFreqDiags = Object.entries(diagFreq).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let maxFreq = sortedFreqDiags.length > 0 ? sortedFreqDiags[0][1] : 1;
+            document.getElementById('analyticsFreqDiagnosesBars').innerHTML = sortedFreqDiags.length === 0 ? '<p>Немає даних</p>' :
+                sortedFreqDiags.map(([d, count]) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span><b>${d}</b></span>
+                            <span>${count} раз(и)</span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((count/maxFreq)*100)}%;"></div></div>
+                    </div>
+                `).join('');
+
+            let months = {};
+            filtered.forEach(v => {
+                if (v.date) {
+                    let mKey = v.date.substring(0, 7);
+                    if (!months[mKey]) months[mKey] = { count: 0, spent: 0 };
+                    months[mKey].count += 1;
+                    months[mKey].spent += (Number(v.costDoctor)||0) + (Number(v.costMeds)||0);
+                }
+            });
+            let sortedMonths = Object.entries(months).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 6);
+            let maxMSpent = sortedMonths.length > 0 ? Math.max(...sortedMonths.map(x => x[1].spent), 1) : 1;
+            document.getElementById('analyticsMonthlyBars').innerHTML = sortedMonths.length === 0 ? '<p>Немає записів</p>' :
+                sortedMonths.map(([m, obj]) => `
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                            <span>📅 <b>${m}</b> (${obj.count} подій)</span>
+                            <span><b>${obj.spent.toLocaleString()} ₴</b></span>
+                        </div>
+                        <div class="bar-container"><div class="bar-fill" style="width:${Math.round((obj.spent/maxMSpent)*100)}%; background:var(--teal);"></div></div>
+                    </div>
+                `).join('');
+        }
+
+        /* ==========================================
+           12. PRINTABLE HTML / PDF MEDICAL REPORT
+        ========================================== */
+        function openPrintableReportModal(memberId = '') {
+            pushModalState();
+            updateDropdowns();
+            let sel = document.getElementById('reportMemberSelect');
+            if (sel) sel.value = memberId || '';
+            generatePrintableReportHTML();
+            document.getElementById('printableReportModal').style.display = 'flex';
+        }
+
+        function generatePrintableReportHTML() {
+            let memberId = document.getElementById('reportMemberSelect').value;
+            let membersToInclude = memberId ? dbData.members.filter(m => m.id === memberId) : dbData.members;
+            let container = document.getElementById('printableReportContainer');
+
+            if (membersToInclude.length === 0) {
+                container.innerHTML = '<p style="text-align:center; padding:20px;">Немає даних для формування виписки</p>';
+                return;
+            }
+
+            let html = `
+                <div style="border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 14px;">
+                    <h2 style="color:var(--primary); font-size:1.25rem;">🩺 Медична виписка з амбулаторної картки</h2>
+                    <p style="font-size:0.8rem; color:var(--text-light);">Дата формування документа: ${new Date().toLocaleDateString('uk-UA')}</p>
+                </div>
+            `;
+
+            membersToInclude.forEach(m => {
+                let ageStr = calculateAge(m.birthDate);
+                let visits = dbData.visits.filter(v => v.memberId === m.id).sort((a,b) => new Date(b.date) - new Date(a.date));
+                let activeMeds = (dbData.medications || []).filter(med => med.memberId === m.id && (med.status || 'active') === 'active');
+
+                html += `
+                    <div style="margin-bottom: 22px;">
+                        <div style="background:var(--primary-light); padding:10px 12px; border-radius:10px; margin-bottom:8px;">
+                            <h3 style="color:var(--primary); margin-bottom:4px;">👤 Пацієнт: ${m.name} ${ageStr ? `(${ageStr})` : ''}</h3>
+                            <p style="font-size:0.84rem; margin:0;"><b>Дата народження:</b> ${m.birthDate || '—'} | <b>Група крові:</b> ${m.bloodGroup || '—'}</p>
+                            <p style="font-size:0.84rem; margin:2px 0 0 0; color:var(--danger);"><b>⚠️ Алергії:</b> ${m.allergies || 'немає'}</p>
+                            ${m.chronic ? `<p style="font-size:0.84rem; margin:2px 0 0 0;"><b>📌 Хронічні стани:</b> ${m.chronic}</p>` : ''}
+                        </div>
+                `;
+
+                if (activeMeds.length > 0) {
+                    html += `<p style="font-size:0.84rem; margin-bottom:6px;"><b>💊 Активний прийом препаратів:</b> ${activeMeds.map(x => `${x.name} (${x.dose},${x.rule})`).join('; ')}</p>`;
+                }
+
+                if (visits.length === 0) {
+                    html += `<p style="font-size:0.84rem; color:var(--text-light);">Записів про звернення немає.</p>`;
+                } else {
+                    html += `
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:18%;">Дата</th>
+                                    <th style="width:27%;">Лікар / Заклад</th>
+                                    <th style="width:25%;">Діагноз / Скарги</th>
+                                    <th style="width:30%;">Призначене лікування</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${visits.map(v => `
+                                    <tr>
+                                        <td><b>${v.date}</b><br><span style="font-size:0.7rem; color:var(--text-light);">${v.type === 'home' ? 'Вдома' : 'Візит'}</span></td>
+                                        <td>${v.doctor \vert{}\vert{} '—'}${v.clinic ? `<br><small>${v.clinic}</small>` : ''}</td>
+                                        <td><b>${v.diagnosis \vert{}\vert{} '—'}</b>${v.reason ? `<br><small>${v.reason}</small>` : ''}</td>
+                                        <td>${v.treatment || '—'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function printOrSavePdfReport() {
+            let jobName = `MedCard_Vypyska_${new Date().toISOString().split('T')[0]}`;
+            if (window.AndroidNative && typeof window.AndroidNative.printCurrentPage === 'function') {
+                window.AndroidNative.printCurrentPage(jobName);
+                return;
+            }
+            window.print();
+        }
+
+        function shareHtmlReportFile() {
+            let content = document.getElementById('printableReportContainer').innerHTML;
+            let fullHtml = `<!DOCTYPE html><html lang="uk"><head><meta charset="UTF-8"><title>Медична виписка</title><style>body{font-family:sans-serif;padding:20px;color:#0f172a;} table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;} th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;vertical-align:top;} th{background:#e0f2fe;color:#0284c7;}</style></head><body>${content}</body></html>`;
+            let fileName = `MedCard_Vypyska_${new Date().toISOString().split('T')[0]}.html`;
+
+            if (window.AndroidNative && typeof window.AndroidNative.shareBackupFile === 'function') {
+                window.AndroidNative.shareBackupFile(fileName, fullHtml);
+                return;
+            }
+            let blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast('Виписку завантажено!');
         }
 
         /* ==========================================
@@ -2984,7 +3562,6 @@
             executeMediaFileAction({ type: 'audio', title: a.name || 'Audio', data: a.data }, actionType);
         }
 
-        // НАДІЙНА ПОТОКОВА ПЕРЕДАЧА ЧЕРЕЗ МІСТ ANDROID
         async function executeMediaFileAction(mediaObj, actionType) {
             if (!mediaObj || !mediaObj.data) {
                 showToast('Файл порожній або пошкоджений', 'danger');
@@ -2995,7 +3572,6 @@
 
             if (window.AndroidNative) {
                 try {
-                    // Передача чанками по 256 КБ (щоб не ламати міст Android)
                     if (typeof window.AndroidNative.startChunkedFile === 'function') {
                         let pureB64 = extractPureBase64(mediaObj.data);
                         let startRes = window.AndroidNative.startChunkedFile(fileName, mime);
@@ -3008,7 +3584,7 @@
                             }
                             let finRes = window.AndroidNative.finishChunkedFile(actionType, title);
                             if (finRes === 'OK') {
-                                if (actionType === 'download') showToast(`✅ Збережено: ${fileName}`);
+                                if (actionType === 'download') showToast(`✅ Збережено в Download: ${fileName}`);
                                 return;
                             } else {
                                 showToast('Помилка: ' + finRes, 'warning');
@@ -3016,26 +3592,11 @@
                             }
                         }
                     }
-
-                    // Резерв
-                    if (actionType === 'open' && typeof window.AndroidNative.openBinaryFile === 'function') {
-                        let res = window.AndroidNative.openBinaryFile(fileName, mediaObj.data, mime);
-                        if (res === 'OK') return;
-                    }
-                    if (actionType === 'share' && typeof window.AndroidNative.shareBinaryFile === 'function') {
-                        let res = window.AndroidNative.shareBinaryFile(fileName, mediaObj.data, mime, title);
-                        if (res === 'OK') return;
-                    }
-                    if (actionType === 'download' && typeof window.AndroidNative.saveBinaryFile === 'function') {
-                        let res = window.AndroidNative.saveBinaryFile(fileName, mediaObj.data, mime);
-                        if (res === 'OK') { showToast(`✅ Збережено: ${fileName}`); return; }
-                    }
                 } catch (bridgeErr) {
                     console.error('Bridge error:', bridgeErr);
                 }
             }
 
-            // Резерв для браузера ПК
             try {
                 let bytes = dataURIToUint8Array(mediaObj.data);
                 let blob = new Blob([bytes], { type: mime });
@@ -3146,13 +3707,7 @@
             }
             try {
                 let bytes = dataURIToUint8Array(mediaObj.data);
-                let loadingTask;
-                try {
-                    loadingTask = window.pdfjsLib.getDocument({ data: bytes });
-                } catch (wErr) {
-                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                    loadingTask = window.pdfjsLib.getDocument({ data: bytes });
-                }
+                let loadingTask = window.pdfjsLib.getDocument({ data: bytes });
                 let pdf = await loadingTask.promise;
                 wrapper.innerHTML = `<div style="color:#38bdf8; text-align:center; font-size:0.8rem; margin-bottom:8px;">📄 Сторінок у PDF: ${pdf.numPages}. Використовуйте кнопки ➕ / ➖ знизу для збільшення шрифту!</div>`;
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -3269,8 +3824,9 @@
            14. BACKUP, MIGRATION & EXPORT
         ========================================== */
         function buildBackupPayload() {
+            ensureArraysExist();
             return JSON.stringify({
-                version: 11,
+                version: 12,
                 exportedAt: new Date().toISOString(),
                 members: dbData.members,
                 visits: dbData.visits,
@@ -3317,6 +3873,7 @@
         }
 
         function checkBackupSchedule() {
+            ensureArraysExist();
             let banner = document.getElementById('backupDueBanner');
             let intervalDays = parseInt(appSettings.backupIntervalDays) || 0;
             if (intervalDays <= 0) { banner.style.display = 'none'; return; }
@@ -3445,13 +4002,14 @@
             try {
                 let imported = JSON.parse(jsonText);
                 if (imported.members && imported.visits) {
+                    ensureArraysExist();
                     if (currentImportMode === 'merge') {
                         dbData.members = mergeArraysById(dbData.members, imported.members);
                         dbData.visits = mergeArraysById(dbData.visits, imported.visits);
                         dbData.medications = mergeArraysById(dbData.medications, imported.medications || []);
                         dbData.cabinet = mergeArraysById(dbData.cabinet, imported.cabinet || []);
                         dbData.doctors = mergeArraysById(dbData.doctors, imported.doctors || []);
-                        showToast('Бази успішно об\'єднано! Нові записи додано 🎉');
+                        showToast('Бази успішно об\'єднано! 🎉');
                     } else {
                         dbData.members = imported.members;
                         dbData.visits = imported.visits;
@@ -3479,6 +4037,7 @@
         }
 
         function exportReadableReport() {
+            ensureArraysExist();
             let lines = [];
             lines.push('=========================================');
             lines.push('   СІМЕЙНА МЕДИЧНА КАРТКА (ЗВІТ)');
@@ -3549,6 +4108,7 @@
            15. APP INITIALIZATION
         ========================================== */
         function renderAll() {
+            ensureArraysExist();
             renderMembers();
             updateDropdowns();
             renderQuickFilterTags();
