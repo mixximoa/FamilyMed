@@ -37,12 +37,13 @@ jobs:
           cd myapp
           cordova platform add android
 
-      - name: Inject Native Android Backup & Share Bridge into MainActivity.java
+      - name: Inject Native Android File, PDF, Video & Share Bridge into MainActivity.java
         run: |
           cat << 'EOF' > myapp/platforms/android/app/src/main/java/com/family/medcard/MainActivity.java
           package com.family.medcard;
 
           import android.os.Bundle;
+          import android.util.Base64;
           import android.webkit.WebView;
           import android.webkit.JavascriptInterface;
           import android.content.Intent;
@@ -50,6 +51,7 @@ jobs:
           import android.net.Uri;
           import android.os.Build;
           import android.os.Environment;
+          import android.os.StrictMode;
           import android.provider.MediaStore;
           import java.io.OutputStream;
           import java.io.File;
@@ -61,6 +63,9 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+                  StrictMode.setVmPolicy(builder.build());
+
                   Bundle extras = getIntent().getExtras();
                   if (extras != null && extras.getBoolean("cdvStartInBackground", false)) {
                       moveTaskToBack(true);
@@ -69,6 +74,8 @@ jobs:
                   try {
                       WebView webView = (WebView) this.appView.getView();
                       webView.getSettings().setJavaScriptEnabled(true);
+                      webView.getSettings().setAllowFileAccess(true);
+                      webView.getSettings().setDomStorageEnabled(true);
                       webView.addJavascriptInterface(new WebAppInterface(), "AndroidNative");
                   } catch (Exception e) {
                       e.printStackTrace();
@@ -76,17 +83,17 @@ jobs:
               }
 
               public class WebAppInterface {
-                  private Uri writeToDownloads(String fileName, String content) throws Exception {
+                  private Uri writeBytesToDownloads(String fileName, byte[] dataBytes, String mimeType) throws Exception {
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                           ContentValues values = new ContentValues();
                           values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
-                          values.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+                          values.put(MediaStore.Downloads.MIME_TYPE, mimeType);
                           values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
                           Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                           if (uri != null) {
                               OutputStream out = getContentResolver().openOutputStream(uri);
                               if (out != null) {
-                                  out.write(content.getBytes(StandardCharsets.UTF_8));
+                                  out.write(dataBytes);
                                   out.flush();
                                   out.close();
                               }
@@ -97,16 +104,25 @@ jobs:
                       if (!dir.exists()) dir.mkdirs();
                       File file = new File(dir, fileName);
                       FileOutputStream fos = new FileOutputStream(file);
-                      fos.write(content.getBytes(StandardCharsets.UTF_8));
+                      fos.write(dataBytes);
                       fos.flush();
                       fos.close();
                       return Uri.fromFile(file);
                   }
 
+                  private byte[] decodeBase64Data(String base64Data) {
+                      String pure = base64Data;
+                      int comma = base64Data.indexOf(',');
+                      if (comma != -1) {
+                          pure = base64Data.substring(comma + 1);
+                      }
+                      return Base64.decode(pure, Base64.DEFAULT);
+                  }
+
                   @JavascriptInterface
                   public String saveBackupToPhone(String fileName, String content) {
                       try {
-                          writeToDownloads(fileName, content);
+                          writeBytesToDownloads(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json");
                           return "OK";
                       } catch (Exception e) {
                           return "ERR:" + e.getMessage();
@@ -116,14 +132,63 @@ jobs:
                   @JavascriptInterface
                   public String shareBackupFile(String fileName, String content) {
                       try {
-                          Uri uri = writeToDownloads(fileName, content);
+                          Uri uri = writeBytesToDownloads(fileName, content.getBytes(StandardCharsets.UTF_8), "application/json");
                           Intent shareIntent = new Intent(Intent.ACTION_SEND);
                           shareIntent.setType("application/json");
                           shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
                           shareIntent.putExtra(Intent.EXTRA_SUBJECT, fileName);
-                          shareIntent.putExtra(Intent.EXTRA_TEXT, "Резервна копія бази даних Сімейна Медкартка PRO (" + fileName + ")");
+                          shareIntent.putExtra(Intent.EXTRA_TEXT, "Резервна копія Сімейна Медкартка PRO (" + fileName + ")");
                           shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                           Intent chooser = Intent.createChooser(shareIntent, "Зберегти на Google Диск або переслати");
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          startActivity(chooser);
+                          return "OK";
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String saveBinaryFile(String fileName, String base64Data, String mimeType) {
+                      try {
+                          byte[] bytes = decodeBase64Data(base64Data);
+                          writeBytesToDownloads(fileName, bytes, mimeType);
+                          return "OK";
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String openBinaryFile(String fileName, String base64Data, String mimeType) {
+                      try {
+                          byte[] bytes = decodeBase64Data(base64Data);
+                          Uri uri = writeBytesToDownloads(fileName, bytes, mimeType);
+                          Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+                          viewIntent.setDataAndType(uri, mimeType);
+                          viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          viewIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          Intent chooser = Intent.createChooser(viewIntent, "Відкрити файл у додатку");
+                          chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                          startActivity(chooser);
+                          return "OK";
+                      } catch (Exception e) {
+                          return "ERR:" + e.getMessage();
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public String shareBinaryFile(String fileName, String base64Data, String mimeType, String title) {
+                      try {
+                          byte[] bytes = decodeBase64Data(base64Data);
+                          Uri uri = writeBytesToDownloads(fileName, bytes, mimeType);
+                          Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                          shareIntent.setType(mimeType);
+                          shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                          shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+                          shareIntent.putExtra(Intent.EXTRA_TEXT, title);
+                          shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          Intent chooser = Intent.createChooser(shareIntent, "Поділитися файлом");
                           chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                           startActivity(chooser);
                           return "OK";
