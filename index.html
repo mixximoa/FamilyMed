@@ -1062,11 +1062,10 @@
             <p style="font-size:0.84rem; color:var(--text-light); margin-bottom:12px;">Детальний путівник по всіх можливостях програми для вашої родини.</p>
 
             <div class="help-section">
-                <h4>🖼️ 1. Офлайн-перегляд PDF, Збільшення фото та Поділитися</h4>
+                <h4>🖼️ 1. Офлайн-перегляд PDF, Відео, Збільшення фото та Поділитися</h4>
                 <ul>
                     <li><b>Збільшення дрібного шрифту на фото:</b> натисніть на будь-яке фото або кнопку <code>🔍 Збільшити</code> — розводьте зображення двома пальцями (Pinch-to-Zoom), натискайте двічі по екрану або користуйтеся кнопками <code>➕</code> / <code>➖</code> (до 800%).</li>
-                    <li><b>Читання PDF без інтернету:</b> PDF-рушій вбудовано прямо у додаток — усі сторінки аналізів розгортаються миттєво навіть без зв'язку.</li>
-                    <li><b>Чиста папка Download:</b> кнопки <code>📱 Відкрити</code> та <code>📤 Поділитися</code> працюють через тимчасовий кеш, не засмічуючи телефон дублікатами, а кнопка <code>⬇️ Скачати</code> зберігає файл у папку Завантаження.</li>
+                    <li><b>Читання PDF та Відео будь-якого розміру:</b> додаток передає великі PDF та відеофайли потоковими частинами без обмежень пам'яті. Ви можете читати PDF прямо всередині додатка, відкривати їх у зовнішній PDF-читалці, пересилати у Viber/Telegram або скачувати в папку Download.</li>
                 </ul>
             </div>
 
@@ -1145,7 +1144,7 @@
 
         // PIN Lock State
         let pinEntered = '';
-        let pinMode = 'unlock'; // 'unlock' or 'setup'
+        let pinMode = 'unlock';
 
         // Interactive Media Viewer State
         let activeViewerMedia = null;
@@ -2661,7 +2660,7 @@
                             currentVisitMedia.push({
                                 type: fType,
                                 data: evt.target.result,
-                                title: file.name.substring(0, 32),
+                                title: file.name.replace(/\.[^/.]+$/, "").substring(0, 32),
                                 tags: fType === 'pdf' ? '#аналізи #виписка' : '#відео'
                             });
                             res();
@@ -3352,12 +3351,18 @@
         }
 
         /* ==========================================
-           13. FULL-SCREEN ZOOM VIEWER, OFFLINE PDF.JS & FILE SHARING
+           13. FULL-SCREEN ZOOM VIEWER, OFFLINE PDF.JS & CHUNKED FILE SHARING
         ========================================== */
+        function extractPureBase64(dataURI) {
+            if (!dataURI) return '';
+            let commaIdx = dataURI.indexOf(',');
+            let pure = commaIdx !== -1 ? dataURI.substring(commaIdx + 1) : dataURI;
+            return pure.replace(/\s/g, '');
+        }
+
         function dataURIToUint8Array(dataURI) {
-            let split = dataURI.split(',');
-            let base64 = split.length > 1 ? split[1] : split[0];
-            let raw = window.atob(base64);
+            let pure = extractPureBase64(dataURI);
+            let raw = window.atob(pure);
             let uint8 = new Uint8Array(raw.length);
             for (let i = 0; i < raw.length; i++) {
                 uint8[i] = raw.charCodeAt(i);
@@ -3368,31 +3373,51 @@
         function getMediaMimeAndFileName(mediaObj) {
             let dataURI = mediaObj.data || '';
             let mime = 'image/jpeg';
-            if (dataURI.startsWith('data:')) {
-                mime = dataURI.substring(5, dataURI.indexOf(';'));
-            } else if (mediaObj.type === 'pdf') {
+
+            if (mediaObj.type === 'pdf') {
                 mime = 'application/pdf';
             } else if (mediaObj.type === 'video') {
                 mime = 'video/mp4';
             } else if (mediaObj.type === 'audio') {
                 mime = 'audio/mp4';
+            } else if (dataURI.startsWith('data:')) {
+                let header = dataURI.substring(5, dataURI.indexOf(','));
+                let parts = header.split(';');
+                if (parts[0] && parts[0].includes('/')) {
+                    mime = parts[0];
+                }
             }
 
             let ext = '.jpg';
-            if (mime.includes('pdf') || mediaObj.type === 'pdf') { mime = 'application/pdf'; ext = '.pdf'; }
-            else if (mime.includes('png')) ext = '.png';
-            else if (mime.includes('mp4')) ext = '.mp4';
-            else if (mime.includes('webm') && mediaObj.type === 'video') ext = '.webm';
-            else if (mediaObj.type === 'video') { mime = 'video/mp4'; ext = '.mp4'; }
-            else if (mime.includes('mpeg') || mime.includes('mp3')) ext = '.mp3';
-            else if (mime.includes('wav')) ext = '.wav';
-            else if (mediaObj.type === 'audio' || mime.includes('audio')) ext = '.m4a';
-
-            let cleanTitle = (mediaObj.title || mediaObj.name || 'MedFile').replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_\-]/g, '_');
-            if (!cleanTitle.toLowerCase().endsWith(ext)) {
-                cleanTitle += ext;
+            if (mime.includes('pdf') || mediaObj.type === 'pdf') {
+                mime = 'application/pdf';
+                ext = '.pdf';
+            } else if (mime.includes('png')) {
+                ext = '.png';
+            } else if (mime.includes('webm') && mediaObj.type === 'video') {
+                mime = 'video/webm';
+                ext = '.webm';
+            } else if (mediaObj.type === 'video' || mime.startsWith('video/')) {
+                mime = 'video/mp4';
+                ext = '.mp4';
+            } else if (mime.includes('mpeg') || mime.includes('mp3')) {
+                mime = 'audio/mpeg';
+                ext = '.mp3';
+            } else if (mime.includes('wav')) {
+                mime = 'audio/wav';
+                ext = '.wav';
+            } else if (mediaObj.type === 'audio' || mime.startsWith('audio/')) {
+                mime = 'audio/mp4';
+                ext = '.m4a';
             }
-            return { mime, fileName: cleanTitle };
+
+            let rawTitle = (mediaObj.title || mediaObj.name || 'MedFile').trim();
+            // Прибираємо старе розширення з назви, якщо воно вже є, щоб не було file.pdf.pdf
+            rawTitle = rawTitle.replace(/\.(pdf|jpg|jpeg|png|mp4|mov|webm|mp3|wav|m4a)$/i, '');
+            let cleanTitle = rawTitle.replace(/[^a-zA-Zа-яА-ЯіїєґІЇЄҐ0-9_\-]/g, '_');
+            if (!cleanTitle) cleanTitle = 'MedFile_' + Date.now();
+
+            return { mime, fileName: cleanTitle + ext };
         }
 
         function handleSingleMediaAction(visitId, mediaIdx, actionType) {
@@ -3408,31 +3433,66 @@
             executeMediaFileAction({ type: 'audio', title: a.name || 'Audio', data: a.data }, actionType);
         }
 
+        // Надійна потокова передача великих PDF, Відео та Фото через міст AndroidNative
         async function executeMediaFileAction(mediaObj, actionType) {
+            if (!mediaObj || !mediaObj.data) {
+                showToast('Файл порожній або пошкоджений', 'danger');
+                return;
+            }
             let { mime, fileName } = getMediaMimeAndFileName(mediaObj);
             let title = mediaObj.title || mediaObj.name || fileName;
 
             if (window.AndroidNative) {
-                if (actionType === 'open' && typeof window.AndroidNative.openBinaryFile === 'function') {
-                    let res = window.AndroidNative.openBinaryFile(fileName, mediaObj.data, mime);
-                    if (res === 'OK') return;
-                    showToast('Помилка відкриття: ' + res, 'warning');
-                }
-                if (actionType === 'share' && typeof window.AndroidNative.shareBinaryFile === 'function') {
-                    let res = window.AndroidNative.shareBinaryFile(fileName, mediaObj.data, mime, title);
-                    if (res === 'OK') return;
-                    showToast('Помилка відправки: ' + res, 'warning');
-                }
-                if (actionType === 'download' && typeof window.AndroidNative.saveBinaryFile === 'function') {
-                    let res = window.AndroidNative.saveBinaryFile(fileName, mediaObj.data, mime);
-                    if (res === 'OK') {
-                        showToast(`✅ Файл збережено в Завантаження (Download): ${fileName}`);
-                        return;
+                try {
+                    // Використовуємо потокову передачу по 256 КБ (безпечно для будь-яких PDF та Відео)
+                    if (typeof window.AndroidNative.startChunkedFile === 'function') {
+                        let pureB64 = extractPureBase64(mediaObj.data);
+                        let startRes = window.AndroidNative.startChunkedFile(fileName, mime);
+                        if (startRes === 'OK') {
+                            // Важливо: розмір чанка кратний 4, щоб Base64 декодувався без помилок!
+                            const CHUNK_SIZE = 262144; // 256 KB
+                            for (let offset = 0; offset < pureB64.length; offset += CHUNK_SIZE) {
+                                let slice = pureB64.substring(offset, offset + CHUNK_SIZE);
+                                let appRes = window.AndroidNative.appendFileChunk(slice);
+                                if (appRes !== 'OK') {
+                                    throw new Error(appRes);
+                                }
+                            }
+                            let finRes = window.AndroidNative.finishChunkedFile(actionType, title);
+                            if (finRes === 'OK') {
+                                if (actionType === 'download') {
+                                    showToast(`✅ Збережено в папку Завантаження (Download): ${fileName}`);
+                                }
+                                return;
+                            } else {
+                                showToast('Помилка обробки файлу: ' + finRes, 'warning');
+                                return;
+                            }
+                        }
                     }
-                    showToast('Помилка збереження: ' + res, 'danger');
+
+                    // Резервний прямий виклик (якщо стара версія мосту)
+                    if (actionType === 'open' && typeof window.AndroidNative.openBinaryFile === 'function') {
+                        let res = window.AndroidNative.openBinaryFile(fileName, mediaObj.data, mime);
+                        if (res === 'OK') return;
+                    }
+                    if (actionType === 'share' && typeof window.AndroidNative.shareBinaryFile === 'function') {
+                        let res = window.AndroidNative.shareBinaryFile(fileName, mediaObj.data, mime, title);
+                        if (res === 'OK') return;
+                    }
+                    if (actionType === 'download' && typeof window.AndroidNative.saveBinaryFile === 'function') {
+                        let res = window.AndroidNative.saveBinaryFile(fileName, mediaObj.data, mime);
+                        if (res === 'OK') {
+                            showToast(`✅ Файл збережено в Завантаження (Download): ${fileName}`);
+                            return;
+                        }
+                    }
+                } catch (bridgeErr) {
+                    console.error('Bridge error:', bridgeErr);
                 }
             }
 
+            // Резерв для браузера на ПК або мобільного Chrome
             try {
                 let bytes = dataURIToUint8Array(mediaObj.data);
                 let blob = new Blob([bytes], { type: mime });
@@ -3456,7 +3516,7 @@
                     showToast(`✅ Файл ${fileName} завантажено!`);
                 }
             } catch (e) {
-                showToast('Не вдалося виконати дію з файлом', 'danger');
+                showToast('Не вдалося виконати дію з файлом: ' + e.message, 'danger');
             }
         }
 
@@ -3500,7 +3560,7 @@
                     stage.innerHTML = `
                         <div style="width:96%; text-align:center;">
                             <video controls autoplay playsinline style="width:100%; max-height:70vh; border-radius:12px; background:#000;" src="${currentBlobUrl}"></video>
-                            <p style="color:#94a3b8; font-size:0.8rem; margin-top:10px;">Якщо відео не відтворюється у вбудованому плеєрі, натисніть кнопку нижче:</p>
+                            <p style="color:#94a3b8; font-size:0.8rem; margin-top:10px;">Також можна відкрити відео у системному плеєрі телефона:</p>
                             <button class="btn" style="max-width:320px; margin:8px auto 0 auto;" onclick="openCurrentMediaExternally()">📱 Відкрити у відеоплеєрі телефона</button>
                         </div>
                     `;
